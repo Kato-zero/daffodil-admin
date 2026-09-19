@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daffodil Care — Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%230e3b2c'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23f7c62f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --leaf:#0e3b2c;--leaf2:#082a1f;--stem:#2b7a57;--sage:#e4eee2;--paper:#f6f6ee;
+  --petal:#f7c62f;--petal2:#fbd95c;--butter:#fdf1c2;
+  --ink:#15221c;--muted:#56655d;--line:#d8e2d6;--danger:#a3332b;--ok:#1f7a4f;
+  --display:"Fraunces",Georgia,serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --shadow:0 24px 60px -28px rgba(14,59,44,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);font-weight:600;line-height:1.15;margin:0 0 .5em}
+a{color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--petal);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1280px,calc(100% - 40px));margin-inline:auto}
+.topbar{background:var(--leaf);color:#fff;padding:14px 0;position:sticky;top:0;z-index:50;box-shadow:0 4px 20px -10px rgba(0,0,0,.4)}
+.topbar .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:1.15rem;text-decoration:none;color:#fff}
+.topbar .dot{width:28px;height:28px;border-radius:50%;background:var(--petal);display:grid;place-items:center;color:var(--leaf);font-weight:700;font-family:var(--display)}
+.topbar nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.topbar nav a{padding:8px 14px;border-radius:999px;text-decoration:none;font-size:.92rem;font-weight:500;color:#dbe9df}
+.topbar nav a:hover{background:rgba(255,255,255,.12);color:#fff}
+.topbar nav a.on{background:var(--petal);color:#2b2506;font-weight:700}
+.who{display:flex;align-items:center;gap:10px;font-size:.86rem;color:#b8cec2;padding-left:8px;border-left:1px solid rgba(255,255,255,.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;border-radius:999px;border:2px solid transparent;text-decoration:none;font-weight:700;font-size:.95rem;line-height:1.2;transition:transform .15s,background .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--petal);color:#2b2506}
+.btn-primary:hover{background:var(--petal2)}
+.btn-dark{background:var(--leaf);color:#fff}
+.btn-dark:hover{background:var(--stem)}
+.btn-outline{border-color:var(--line);background:#fff;color:var(--ink)}
+.btn-outline:hover{background:var(--sage)}
+.btn-danger{background:transparent;border-color:#ecc8c4;color:var(--danger)}
+.btn-danger:hover{background:#fdecea}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:.82rem}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.page{padding:28px 0 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:20px}
+.card h2{margin-bottom:6px;font-size:1.5rem}
+.card .sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:600;margin-bottom:6px;font-size:.9rem}
+.field input,.field textarea,.field select{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fbfcfa;outline:none;font-size:.95rem;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.field textarea{min-height:120px;resize:vertical;font-family:inherit}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--stem);box-shadow:0 0 0 4px rgba(43,122,87,.14)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:640px){.row,.row-3{grid-template-columns:1fr}}
+.status{font-weight:600;margin:12px 0 0;font-size:.92rem;min-height:1.1em}
+.status.err{color:var(--danger)}
+.status.ok{color:var(--ok)}
+.login{max-width:440px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:24px;padding:34px;box-shadow:var(--shadow)}
+.login h1{font-size:2rem;margin-bottom:6px}
+.login .sub{color:var(--muted);margin:0 0 24px}
+.grid-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.slot{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.slot.uploading{opacity:.5;pointer-events:none}
+.slot .thumb{aspect-ratio:4/3;background:linear-gradient(160deg,var(--stem),var(--leaf)) center/40% no-repeat;position:relative;overflow:hidden}
+.slot .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot .thumb .empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.7);font-size:.82rem;text-align:center;padding:12px}
+.slot .info{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:6px}
+.slot .info b{font-size:.9rem;font-weight:600;word-break:break-word}
+.slot .info small{color:var(--muted);font-size:.75rem;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.slot .acts{display:flex;gap:6px;padding:0 12px 12px}
+.slot .acts label,.slot .acts button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:34px;display:inline-flex;align-items:center;justify-content:center;flex:1}
+.slot .acts label:hover,.slot .acts button:hover{background:var(--sage)}
+.slot .acts input[type=file]{display:none}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:14px;margin:26px 0 14px;flex-wrap:wrap}
+.section-head h3{margin:0;font-size:1.2rem}
+.section-head .hint{color:var(--muted);font-size:.85rem;margin:0}
+.pill{display:inline-block;background:var(--sage);color:var(--leaf);font-weight:600;font-size:.78rem;padding:3px 10px;border-radius:999px}
+.pill.new{background:var(--butter);color:#5b4a06}
+.pill.ok{background:#d8f0e0;color:#1f5a37}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.86rem;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:10px 16px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--leaf);border-bottom-color:var(--leaf)}
+.list-item{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;background:#fbfcfa;display:flex;gap:12px;align-items:flex-start}
+.list-item .grow{flex:1;min-width:0}
+.list-item .grow input,.list-item .grow textarea,.list-item .grow select{margin-bottom:8px}
+.list-item .grow textarea{min-height:70px}
+.list-item .drag{cursor:grab;color:var(--muted);padding-top:6px;font-size:1.1rem;user-select:none}
+.list-item .del{border:0;background:none;color:var(--danger);font-weight:600;padding:6px 4px;font-size:.85rem}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:24px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--leaf);color:#fff;padding:12px 20px;border-radius:999px;z-index:500;opacity:0;pointer-events:none;transition:all .25s;box-shadow:var(--shadow);font-weight:500}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.loading{text-align:center;padding:60px 20px;color:var(--muted)}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--sage);border-top-color:var(--stem);border-radius:50%;animation:sp 0.8s linear infinite;margin-bottom:14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot">D</span> Daffodil Care</a>
+  <nav id="adminNav" hidden>
+    <a href="#images" data-tab="images">Images</a>
+    <a href="#content" data-tab="content">Content</a>
+    <a href="#vents" data-tab="vents">Vent board</a>
+    <a href="#stories" data-tab="stories">Story replies</a>
+  </nav>
+  <span class="who" id="who" hidden></span>
+</div></div>
+
+<main class="wrap page" id="app"><div class="loading"><div class="spinner"></div><p>Connecting…</p></div></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   CONFIG — same Supabase project as the public site
+   ===================================================================== */
+const CONFIG={
+  supabase:{url:"",anonKey:"",bucket:"site-images"},
+  publicSiteUrl:"index.html"
+};
+
+/* ---------- defaults mirrored from the public site so we can seed Supabase ---------- */
+const DEFAULTS={
+  "site.email":"hello@example.org",
+  "site.phone":"+260 000 000 000",
+  "site.whatsapp":"https://wa.me/260000000000",
+  "site.location":"Lusaka, Zambia",
+  "site.notice":"A safe, welcoming community for teens, young adults, adults and communities across Zambia.",
+  "site.brand_name":"Daffodil Care",
+  "site.footer_blurb":"Bloom. Heal. Shine. Community care, wellness education, mentorship and connection for people from their teenage years and beyond.",
+  "site.social":{Facebook:"https://facebook.com/",Instagram:"https://instagram.com/",TikTok:"https://tiktok.com/",LinkedIn:"https://linkedin.com/"},
+  "home.hero_title":"You are welcome here.",
+  "home.hero_lede":"Daffodil Care is a community organisation creating spaces where teenagers, young adults, adults and communities can connect, learn, grow and support one another.",
+  "home.motto":"Bloom. Heal. Shine.",
+  "home.people_heading":"People first.\nCommunity always.",
+  "home.people_lede":"Our programmes are designed to be welcoming, practical and relevant at different stages of life.",
+  "home.band_heading":"Come to a Chill and Listen.",
+  "home.band_text":"Our community meetup is built around honest conversation and being heard. Come alone or bring a friend. You don't have to say a word to belong.",
+  "home.room_heading":"There is room for you.",
+  "home.room_lede":"Whether you are 15 or 50+, a student, professional, volunteer, parent, mentor or simply someone looking for community, our activities can meet you where you are.",
+  "home.involved_heading":"Don't just attend. Help build the community.",
+  "home.involved_lede":"Volunteer at events, become a partner, share your skills, support a programme or help us reach people who may benefit from community care.",
+  "site.stats":[
+    {n:539,suffix:"+",label:"Chill and Listen attendees"},
+    {n:295,suffix:"",label:"Community members"},
+    {n:2000,suffix:"+",label:"Followers online"},
+    {n:2021,suffix:"",label:"Where the community began",plain:true}
+  ],
+  programs:[
+    {icon:"users",name:"Healing Circles",short:"Small, welcoming circles where people can talk, listen and feel heard.",body:"Facilitated community conversations for people carrying stress, grief, loneliness, pressure or major life changes.",points:["Respectful community ground rules","Facilitated so different voices can be heard","Open to teens, young adults and adults"]},
+    {icon:"book",name:"Wellness Education",short:"Practical conversations about wellbeing, life skills and healthy communities.",body:"Interactive sessions that make wellness easier to understand and apply in everyday life.",points:["Mental and emotional wellbeing","Healthy routines, movement and nutrition","Finding appropriate professional support"]},
+    {icon:"compass",name:"Youth & Young Adult Mentorship",short:"Guidance, encouragement and practical support while growing into adulthood.",body:"Mentorship for teenagers and young adults navigating school, careers, relationships, confidence and personal goals.",points:["Goal setting and life skills","Education and career conversations","Positive role models and peer connection"]},
+    {icon:"heart",name:"Community Outreach",short:"We take care, education and connection beyond our regular meeting spaces.",body:"Outreach can include schools, universities, children's homes, community groups and other settings.",points:["School and campus activities","Community visits","Partnership-based outreach"]},
+    {icon:"cap",name:"Campus Wellness Clubs",short:"Student-led spaces where students can connect, learn and support one another.",body:"Our campus clubs create a consistent community around wellbeing, volunteering, events and peer support.",points:["Student-led activities","Healing Circles and workshops","Community service and outreach"]},
+    {icon:"brief",name:"Workplace & Community Wellness",short:"Practical sessions for organisations that want healthier, kinder communities.",body:"We work with organisations and teams on communication, stress awareness, wellbeing and supportive environments.",points:["Workplace sessions","Community workshops","Custom partnership programmes"]}
+  ],
+  events:[
+    {date:"Next meetup",title:"Date to be announced",venue:"Lusaka, Zambia",text:"Follow our socials or send us a message and we'll tell you as soon as the next Chill and Listen is set."},
+    {date:"29 May 2026",title:"Chill and Listen — Community Meetup",venue:"Lusaka, Zambia",text:"A community gathering built around honest conversation, connection and listening."},
+    {date:"Community outreach",title:"Wellness & Community Day",venue:"Zambia",text:"An outreach day bringing practical wellness education and community connection."}
+  ],
+  gallery:[
+    {title:"Chill and Listen: Community Meetup",date:"29 May 2026",about:"A community gathering built around honest conversation, connection and listening.",photos:[]},
+    {title:"Campus Wellness Club Day",date:"March 2026",about:"Students connecting, learning and supporting each other.",photos:[]},
+    {title:"Wellness & Community Day",date:"December 2025",about:"An outreach day bringing practical wellness education to the community.",photos:[]}
+  ],
+  team:[
+    {name:"Full Name",role:"Founder & Director",photo:""},
+    {name:"Full Name",role:"Programmes Lead",photo:""},
+    {name:"Full Name",role:"Community Outreach Lead",photo:""},
+    {name:"Full Name",role:"Communications Lead",photo:""}
+  ],
+  stories:[
+    {id:"how-daffodil-care-began",title:"How Daffodil Care began",date:"12 Sep 2026",tag:"Our story",cover:"",body:["Daffodil Care began as a student-led idea: that wellbeing is something communities can practise together, and that people should not have to carry difficult seasons alone.","What grew from those early gatherings is what you see today: Healing Circles, wellness education, mentorship, outreach and campus clubs.","We are still learning. We are still listening. And there is still room for you."]},
+    {id:"what-happens-in-a-healing-circle",title:"What happens in a Healing Circle?",date:"28 Aug 2026",tag:"Programme",cover:"",body:["A first circle can feel unfamiliar. There is no agenda, no performance, no pressure to share.","The group follows agreed ground rules around respect and confidentiality. No advice is forced on anyone.","Some people come to speak. Many come just to listen. Both are welcome."]},
+    {id:"small-conversations-make-a-difference",title:"Small conversations can make a difference",date:"14 Aug 2026",tag:"Community",cover:"",body:["Sometimes support starts with a simple question, a genuine listen and making space for another person.","You do not need to have the answers. Often the most helpful thing is to stay.","Small conversations, repeated over time, are how communities become places where people can heal."]}
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+let toastT;function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600)}
+
+/* ---------- Supabase REST helpers (auth-aware) ---------- */
+const SB=CONFIG.supabase;
+const baseUrl=()=>SB.url.replace(/\/$/,"");
+const session=()=>LS.get("dc_admin",null);
+const setSession=s=>LS.set("dc_admin",s);
+function authHeaders(){
+  const s=session();
+  const h={apikey:SB.anonKey,"Content-Type":"application/json"};
+  if(s&&s.access_token)h.Authorization="Bearer "+s.access_token;
+  else h.Authorization="Bearer "+SB.anonKey;
+  return h;
+}
+async function sb(path,{method="GET",body,headers={}}={}){
+  const r=await fetch(baseUrl()+"/rest/v1/"+path,{method,headers:{...authHeaders(),...headers},body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+
+/* ---------- auth ---------- */
+async function signIn(email,password){
+  const r=await fetch(baseUrl()+"/auth/v1/token?grant_type=password",{
+    method:"POST",headers:{"Content-Type":"application/json",apikey:SB.anonKey},
+    body:JSON.stringify({email,password})
+  });
+  if(!r.ok)throw new Error("Invalid email or password");
+  const data=await r.json();
+  setSession({email,access_token:data.access_token,refresh_token:data.refresh_token,expires_at:Date.now()+data.expires_in*1000});
+  return data;
+}
+function signOut(){LS.set("dc_admin",null)}
+
+/* ---------- state ---------- */
+const STATE={
+  content:{},          // key -> value
+  images:[],           // [{key,url}]
+  vents:[],            // for admin view
+  storyReplies:[],     // for admin view
+  tab:"images",
+  loading:false
+};
+const DEFAULT_IMAGE_KEYS=[
+  {key:"logo",label:"Site logo",group:"Brand"},
+  {key:"photos.hero",label:"Home hero",group:"Home"},
+  {key:"photos.meetup1",label:"Meetup 1",group:"Home"},
+  {key:"photos.meetup2",label:"Meetup 2",group:"Home"},
+  {key:"photos.meetup3",label:"Meetup 3",group:"Home"},
+  {key:"photos.meetup4",label:"Meetup 4",group:"Home"},
+  {key:"photos.meetup5",label:"Meetup 5",group:"Home"},
+  {key:"photos.outreach",label:"Community outreach",group:"Home"},
+  {key:"photos.mentorship",label:"Mentorship",group:"Home"}
+];
+
+/* ---------- data load ---------- */
+async function loadAll(){
+  STATE.loading=true;
+  try{
+    const [c,i,v,sr]=await Promise.all([
+      sb("site_content?select=key,value"),
+      sb("site_images?select=key,url,updated_at"),
+      sb("vents?select=id,created_at,handle,mood,body,hidden,reports,replies:vent_replies(count)&order=created_at.desc&limit=200").catch(()=>[]),
+      sb("story_replies?select=id,story_id,created_at,handle,body&order=created_at.desc&limit=500").catch(()=>[])
+    ]);
+    STATE.content={};c.forEach(r=>{STATE.content[r.key]=r.value});
+    STATE.images=i;
+    STATE.vents=v||[];
+    STATE.storyReplies=sr||[];
+  }catch(e){console.error(e);toast("Couldn't load: "+(e.message||e))}
+  STATE.loading=false;
+}
+
+/* ---------- content write ---------- */
+async function upsertContent(key,value){
+  await sb("site_content?on_conflict=key",{method:"POST",
+    headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+    body:[{key,value,updated_at:new Date().toISOString()}]});
+  STATE.content[key]=value;
+}
+async function deleteContent(key){
+  await sb(`site_content?key=eq.${encodeURIComponent(key)}`,{method:"DELETE"});
+  delete STATE.content[key];
+}
+
+/* ---------- image upload ---------- */
+async function uploadImage(key,file){
+  const s=session();if(!s)throw new Error("Not signed in");
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const safe=key.replace(/[^a-z0-9._-]/gi,"_");
+  const path=`${safe}/${Date.now()}.${ext}`;
+  const up=await fetch(`${baseUrl()}/storage/v1/object/${SB.bucket}/${path}`,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+s.access_token,apikey:SB.anonKey,"Content-Type":file.type||"image/jpeg","x-upsert":"true"},
+    body:file
+  });
+  if(!up.ok)throw new Error(await up.text());
+  const url=`${baseUrl()}/storage/v1/object/public/${SB.bucket}/${path}`;
+  await sb("site_images?on_conflict=key",{method:"POST",
+    headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+    body:[{key,url,updated_at:new Date().toISOString()}]});
+  // refresh in-memory
+  const existing=STATE.images.find(x=>x.key===key);
+  if(existing)existing.url=url;else STATE.images.push({key,url});
+  return url;
+}
+async function removeImage(key){
+  await sb(`site_images?key=eq.${encodeURIComponent(key)}`,{method:"DELETE"});
+  STATE.images=STATE.images.filter(x=>x.key!==key);
+}
+
+/* ---------- image slots: build from defaults + any custom keys already in DB ---------- */
+function imageSlots(){
+  const gallery=(STATE.content.gallery)||DEFAULTS.gallery||[];
+  const team=(STATE.content.team)||DEFAULTS.team||[];
+  const stories=(STATE.content.stories)||DEFAULTS.stories||[];
+  const events=(STATE.content.events)||DEFAULTS.events||[];
+  const slots=[...DEFAULT_IMAGE_KEYS];
+  events.forEach((e,i)=>slots.push({key:`photos.event.${i}`,label:`Event ${i+1} — ${e.title||"image"}`,group:"Events"}));
+  gallery.forEach((g,i)=>{
+    slots.push({key:`gallery.${i}.cover`,label:`${g.title||"Event "+(i+1)} — cover`,group:"Gallery"});
+    const phCount=Math.max((g.photos||[]).length,0);
+    for(let j=0;j<phCount;j++)slots.push({key:`gallery.${i}.photo.${j}`,label:`${g.title||"Event "+(i+1)} — photo ${j+1}`,group:"Gallery"});
+  });
+  team.forEach((m,i)=>slots.push({key:`team.${i}.photo`,label:`${m.name||"Team "+(i+1)} — photo`,group:"Team"}));
+  stories.forEach((s,i)=>slots.push({key:`stories.${i}.cover`,label:`${s.title||"Story "+(i+1)} — cover`,group:"Stories"}));
+  return slots;
+}
+function imageUrlFor(key){const r=STATE.images.find(x=>x.key===key);return r?r.url:""}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function renderLogin(){
+  $("#adminNav").hidden=true;$("#who").hidden=true;
+  $("#app").innerHTML=`<div class="login">
+    <h1>Admin sign in</h1>
+    <p class="sub">Sign in with your Supabase admin account.</p>
+    <form id="loginForm">
+      <div class="field"><label for="em">Email</label><input id="em" type="email" name="email" required autocomplete="email"></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" name="password" required autocomplete="current-password"></div>
+      <button class="btn btn-dark" style="width:100%">Sign in</button>
+      <p class="status" id="loginStatus"></p>
+    </form>
+    ${SB.url?"":`<div class="status err" style="margin-top:16px">Supabase URL is not configured. Add it to CONFIG.supabase in admin.html.</div>`}
+  </div>`;
+  $("#loginForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const st=$("#loginStatus"),btn=$("button",e.target);
+    st.textContent="Signing in…";st.className="status";
+    btn.disabled=true;
+    try{await signIn(e.target.email.value.trim(),e.target.password.value);await boot()}
+    catch(err){st.textContent=err.message||"Sign in failed";st.className="status err";btn.disabled=false}
+  });
+}
+
+function renderShell(){
+  const s=session();
+  $("#adminNav").hidden=false;$("#who").hidden=false;
+  $("#who").innerHTML=`<span>${esc(s.email)}</span> <button class="btn btn-outline btn-sm" id="out">Sign out</button> <a class="btn btn-primary btn-sm" href="${CONFIG.publicSiteUrl}" target="_blank" rel="noopener">View site ↗</a>`;
+  $("#out").addEventListener("click",()=>{signOut();boot()});
+  $$("#adminNav a").forEach(a=>{
+    a.classList.toggle("on",a.dataset.tab===STATE.tab);
+    a.onclick=()=>{STATE.tab=a.dataset.tab;renderShell();renderTab()};
+  });
+}
+function renderTab(){
+  if(STATE.tab==="images")return renderImages();
+  if(STATE.tab==="content")return renderContent();
+  if(STATE.tab==="vents")return renderVents();
+  if(STATE.tab==="stories")return renderStories();
+}
+
+/* ---------- IMAGES TAB ---------- */
+function renderImages(){
+  const slots=imageSlots();
+  const groups=[...new Set(slots.map(s=>s.group))];
+  const missing=slots.filter(s=>!imageUrlFor(s.key)).length;
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace any image on the public site. Changes appear instantly.</p></div>
+    <div><span class="pill">${slots.length} slots</span> ${missing?`<span class="pill new">${missing} missing</span>`:'<span class="pill ok">All set</span>'}</div></div>
+    ${groups.map(g=>`<h3 style="margin:26px 0 12px;font-size:1.1rem">${esc(g)}</h3>
+      <div class="grid-images">${slots.filter(s=>s.group===g).map(slotCard).join("")}</div>`).join("")}
+  `;
+  $$("[data-upload]").forEach(inp=>{
+    inp.addEventListener("change",async e=>{
+      const key=e.target.dataset.upload,file=e.target.files[0];
+      if(!file)return;
+      if(file.size>8*1024*1024){toast("Image too large (max 8 MB)");e.target.value="";return}
+      const slot=e.target.closest(".slot");slot.classList.add("uploading");
+      try{await uploadImage(key,file);toast("Uploaded");renderImages()}
+      catch(err){toast("Upload failed: "+(err.message||err));slot.classList.remove("uploading")}
+    });
+  });
+  $$("[data-remove]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      if(!confirm("Remove this image? The public site will fall back to any default."))return;
+      try{await removeImage(btn.dataset.remove);toast("Removed");renderImages()}
+      catch(err){toast("Couldn't remove: "+(err.message||err))}
+    });
+  });
+}
+function slotCard(s){
+  const url=imageUrlFor(s.key);
+  return `<div class="slot" data-slot="${esc(s.key)}">
+    <div class="thumb">${url?`<img src="${esc(url)}" alt="${esc(s.label)}" referrerpolicy="no-referrer">`:`<div class="empty">No image yet</div>`}</div>
+    <div class="info"><b>${esc(s.label)}</b><small>${esc(s.key)}</small></div>
+    <div class="acts">
+      <label>${url?"Replace":"Upload"}<input type="file" accept="image/*" data-upload="${esc(s.key)}"></label>
+      ${url?`<button data-remove="${esc(s.key)}">Reset</button>`:""}
+    </div>
+  </div>`;
+}
+
+/* ---------- CONTENT TAB ---------- */
+function renderContent(){
+  const c=STATE.content;
+  const get=(k)=>c[k]!==undefined?c[k]:DEFAULTS[k];
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Content</h2><p class="hint">Edit text on the public site. Save each block to push changes live.</p></div>
+    <button class="btn btn-outline btn-sm" id="seedDefaults">Seed missing defaults</button></div>
+
+    <div class="card"><h2>Contact & identity</h2><p class="sub">Shown in the footer and on the Contact page.</p>
+      ${textField("site.email","Email","email")}
+      ${textField("site.phone","Phone")}
+      ${textField("site.whatsapp","WhatsApp URL")}
+      ${textField("site.location","Location")}
+      ${textField("site.brand_name","Brand name")}
+      ${textField("site.notice","Top notice bar")}
+      ${textArea("site.footer_blurb","Footer blurb")}
+      <button class="btn btn-dark btn-sm" data-save-block="identity">Save</button>
+      <p class="status" id="st-identity"></p>
+    </div>
+
+    <div class="card"><h2>Social links</h2>
+      ${["Facebook","Instagram","TikTok","LinkedIn"].map(k=>`<div class="field"><label for="social-${k}">${k}</label><input id="social-${k}" name="social-${k}" value="${esc((get("site.social")||{})[k]||"")}"></div>`).join("")}
+      <button class="btn btn-dark btn-sm" data-save-block="social">Save</button>
+      <p class="status" id="st-social"></p>
+    </div>
+
+    <div class="card"><h2>Home page text</h2>
+      ${textArea("home.hero_title","Hero title")}
+      ${textArea("home.hero_lede","Hero lede")}
+      ${textField("home.motto","Motto")}
+      ${textArea("home.people_heading","Section heading — People first")}
+      ${textArea("home.people_lede","Section lede — People first")}
+      ${textField("home.band_heading","Band heading")}
+      ${textArea("home.band_text","Band text")}
+      ${textField("home.room_heading","Room heading")}
+      ${textArea("home.room_lede","Room lede")}
+      ${textField("home.involved_heading","Involved heading")}
+      ${textArea("home.involved_lede","Involved lede")}
+      <button class="btn btn-dark btn-sm" data-save-block="home">Save</button>
+      <p class="status" id="st-home"></p>
+    </div>
+
+    <div class="card"><h2>Stats</h2><p class="sub">Four numbers on the home page.</p>
+      <div id="statsList">${(get("site.stats")||[]).map(statRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addStat">+ Add stat</button>
+      <button class="btn btn-dark btn-sm" data-save-block="stats" style="margin-left:8px">Save</button>
+      <p class="status" id="st-stats"></p>
+    </div>
+
+    <div class="card"><h2>Programmes</h2><p class="sub">Six programme cards on Home and the Our work page.</p>
+      <div id="programsList">${(get("programs")||[]).map(programRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addProgram">+ Add programme</button>
+      <button class="btn btn-dark btn-sm" data-save-block="programs" style="margin-left:8px">Save</button>
+      <p class="status" id="st-programs"></p>
+    </div>
+
+    <div class="card"><h2>Events</h2><p class="sub">Shown on Stories & events page.</p>
+      <div id="eventsList">${(get("events")||[]).map(eventRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addEvent">+ Add event</button>
+      <button class="btn btn-dark btn-sm" data-save-block="events" style="margin-left:8px">Save</button>
+      <p class="status" id="st-events"></p>
+    </div>
+
+    <div class="card"><h2>Gallery</h2><p class="sub">Each gallery event shows on the Gallery page. Add photos, then upload their images from the Images tab.</p>
+      <div id="galleryList">${(get("gallery")||[]).map(galleryRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addGallery">+ Add gallery event</button>
+      <button class="btn btn-dark btn-sm" data-save-block="gallery" style="margin-left:8px">Save</button>
+      <p class="status" id="st-gallery"></p>
+    </div>
+
+    <div class="card"><h2>Team</h2><p class="sub">Photos upload from the Images tab.</p>
+      <div id="teamList">${(get("team")||[]).map(teamRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addTeam">+ Add member</button>
+      <button class="btn btn-dark btn-sm" data-save-block="team" style="margin-left:8px">Save</button>
+      <p class="status" id="st-team"></p>
+    </div>
+
+    <div class="card"><h2>Stories</h2><p class="sub">Blog-style posts on the Stories page. Each has a cover image (Images tab), body paragraphs, and anonymous replies (Story replies tab).</p>
+      <div id="storiesList">${(get("stories")||[]).map(storyRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addStory">+ Add story</button>
+      <button class="btn btn-dark btn-sm" data-save-block="stories" style="margin-left:8px">Save</button>
+      <p class="status" id="st-stories"></p>
+    </div>
+  `;
+  wireContentSaves();
+  $("#seedDefaults").addEventListener("click",seedMissingDefaults);
+}
+function textField(key,label,type){
+  const v=STATE.content[key]!==undefined?STATE.content[key]:DEFAULTS[key];
+  return `<div class="field"><label for="c-${key}">${esc(label)}</label><input id="c-${key}" data-content="${key}" type="${type||"text"}" value="${esc(v||"")}"></div>`;
+}
+function textArea(key,label){
+  const v=STATE.content[key]!==undefined?STATE.content[key]:DEFAULTS[key];
+  return `<div class="field"><label for="c-${key}">${esc(label)}</label><textarea id="c-${key}" data-content="${key}">${esc(v||"")}</textarea></div>`;
+}
+function statRow(s={},i){
+  return `<div class="list-item" data-stat>
+    <div class="grow">
+      <div class="row-3">
+        <input data-f="n" value="${esc(s.n||"")}" placeholder="Number">
+        <input data-f="suffix" value="${esc(s.suffix||"")}" placeholder="Suffix (+)">
+        <input data-f="plain" type="checkbox" ${s.plain?"checked":""} style="width:auto"> Plain
+      </div>
+      <input data-f="label" value="${esc(s.label||"")}" placeholder="Label">
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+function programRow(p={},i){
+  return `<div class="list-item" data-program>
+    <div class="grow">
+      <div class="row">
+        <input data-f="icon" value="${esc(p.icon||"heart")}" placeholder="Icon (users/book/compass/heart/cap/brief)">
+        <input data-f="name" value="${esc(p.name||"")}" placeholder="Name">
+      </div>
+      <input data-f="short" value="${esc(p.short||"")}" placeholder="Short description">
+      <textarea data-f="body" placeholder="Full description">${esc(p.body||"")}</textarea>
+      <textarea data-f="points" placeholder="One point per line">${esc((p.points||[]).join("\n"))}</textarea>
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+function eventRow(e={},i){
+  return `<div class="list-item" data-event>
+    <div class="grow">
+      <div class="row">
+        <input data-f="date" value="${esc(e.date||"")}" placeholder="Date label">
+        <input data-f="venue" value="${esc(e.venue||"")}" placeholder="Venue">
+      </div>
+      <input data-f="title" value="${esc(e.title||"")}" placeholder="Event title">
+      <textarea data-f="text" placeholder="Description">${esc(e.text||"")}</textarea>
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+function galleryRow(g={},i){
+  const photos=(g.photos||[]).map(p=>typeof p==="string"?{src:p}:p);
+  return `<div class="list-item" data-gallery>
+    <div class="grow">
+      <div class="row">
+        <input data-f="title" value="${esc(g.title||"")}" placeholder="Event title">
+        <input data-f="date" value="${esc(g.date||"")}" placeholder="Date label">
+      </div>
+      <textarea data-f="about" placeholder="Short description">${esc(g.about||"")}</textarea>
+      <textarea data-f="photos" placeholder="One photo URL per line (or leave blank and upload images from the Images tab)">${esc(photos.map(p=>p.src).join("\n"))}</textarea>
+      <small style="color:var(--muted)">Slots in Images tab: <code>gallery.${i}.cover</code>, <code>gallery.${i}.photo.0</code>, <code>gallery.${i}.photo.1</code>…</small>
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+function teamRow(m={},i){
+  return `<div class="list-item" data-team>
+    <div class="grow">
+      <div class="row">
+        <input data-f="name" value="${esc(m.name||"")}" placeholder="Name">
+        <input data-f="role" value="${esc(m.role||"")}" placeholder="Role">
+      </div>
+      <input data-f="photo" value="${esc(m.photo||"")}" placeholder="Photo URL (or leave blank and upload from Images tab)">
+      <small style="color:var(--muted)">Slot in Images tab: <code>team.${i}.photo</code></small>
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+function storyRow(s={},i){
+  return `<div class="list-item" data-story>
+    <div class="grow">
+      <div class="row-3">
+        <input data-f="id" value="${esc(s.id||"")}" placeholder="Slug (unique)">
+        <input data-f="date" value="${esc(s.date||"")}" placeholder="Date">
+        <input data-f="tag" value="${esc(s.tag||"")}" placeholder="Tag">
+      </div>
+      <input data-f="title" value="${esc(s.title||"")}" placeholder="Title">
+      <input data-f="cover" value="${esc(s.cover||"")}" placeholder="Cover URL (or upload from Images tab)">
+      <textarea data-f="body" placeholder="Body — separate paragraphs with a blank line">${esc((s.body||[]).join("\n\n"))}</textarea>
+      <small style="color:var(--muted)">Slot in Images tab: <code>stories.${i}.cover</code></small>
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+
+/* collect rows back into arrays */
+function collectRows(containerSel,rowSel,fieldsFn){
+  const out=[];
+  $$(containerSel+" "+rowSel).forEach(row=>{
+    const o=fieldsFn(row);
+    if(o)out.push(o);
+  });
+  return out;
+}
+function wireContentSaves(){
+  // add buttons
+  const add=(id,listSel,tpl)=>{const b=$(id);if(!b)return;b.addEventListener("click",()=>{
+    const list=$(listSel);const tmp=document.createElement("div");tmp.innerHTML=tpl({},list.children.length);
+    list.appendChild(tmp.firstElementChild);wireDeletes();
+  })};
+  add("#addStat","#statsList",statRow);
+  add("#addProgram","#programsList",programRow);
+  add("#addEvent","#eventsList",eventRow);
+  add("#addGallery","#galleryList",galleryRow);
+  add("#addTeam","#teamList",teamRow);
+  add("#addStory","#storiesList",storyRow);
+  wireDeletes();
+  $$("[data-save-block]").forEach(b=>b.addEventListener("click",()=>saveBlock(b.dataset.saveBlock)));
+}
+function wireDeletes(){
+  $$("[data-del]").forEach(b=>b.onclick=()=>b.closest(".list-item").remove());
+}
+async function saveBlock(block){
+  const st=$("#st-"+block);
+  const set=(t,c)=>{if(st){st.textContent=t;st.className="status "+c}};
+  set("Saving…","");
+  try{
+    if(block==="identity"){
+      const keys=["site.email","site.phone","site.whatsapp","site.location","site.brand_name","site.notice","site.footer_blurb"];
+      for(const k of keys){
+        const el=$(`[data-content="${k}"]`);
+        if(el)await upsertContent(k,el.value);
+      }
+    }
+    if(block==="social"){
+      const social={};
+      ["Facebook","Instagram","TikTok","LinkedIn"].forEach(k=>{
+        const el=$("#social-"+k);if(el&&el.value.trim())social[k]=el.value.trim();
+      });
+      await upsertContent("site.social",social);
+    }
+    if(block==="home"){
+      const keys=["home.hero_title","home.hero_lede","home.motto","home.people_heading","home.people_lede","home.band_heading","home.band_text","home.room_heading","home.room_lede","home.involved_heading","home.involved_lede"];
+      for(const k of keys){
+        const el=$(`[data-content="${k}"]`);
+        if(el)await upsertContent(k,el.value);
+      }
+    }
+    if(block==="stats"){
+      const stats=collectRows("#statsList","[data-stat]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const n=parseInt(g("n").value,10);
+        if(!n&&n!==0)return null;
+        return {n:n||0,suffix:g("suffix").value.trim(),label:g("label").value.trim(),plain:g("plain").checked||undefined};
+      });
+      await upsertContent("site.stats",stats);
+    }
+    if(block==="programs"){
+      const programs=collectRows("#programsList","[data-program]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const name=g("name").value.trim();
+        if(!name)return null;
+        return {icon:g("icon").value.trim()||"heart",name,short:g("short").value.trim(),body:g("body").value.trim(),points:g("points").value.split("\n").map(x=>x.trim()).filter(Boolean)};
+      });
+      await upsertContent("programs",programs);
+    }
+    if(block==="events"){
+      const events=collectRows("#eventsList","[data-event]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const title=g("title").value.trim();
+        if(!title)return null;
+        return {date:g("date").value.trim(),title,venue:g("venue").value.trim(),text:g("text").value.trim()};
+      });
+      await upsertContent("events",events);
+    }
+    if(block==="gallery"){
+      const gallery=collectRows("#galleryList","[data-gallery]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const title=g("title").value.trim();
+        if(!title)return null;
+        const photos=g("photos").value.split("\n").map(x=>x.trim()).filter(Boolean);
+        return {title,date:g("date").value.trim(),about:g("about").value.trim(),photos};
+      });
+      await upsertContent("gallery",gallery);
+    }
+    if(block==="team"){
+      const team=collectRows("#teamList","[data-team]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const name=g("name").value.trim();
+        if(!name)return null;
+        return {name,role:g("role").value.trim(),photo:g("photo").value.trim()};
+      });
+      await upsertContent("team",team);
+    }
+    if(block==="stories"){
+      const stories=collectRows("#storiesList","[data-story]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const id=g("id").value.trim(),title=g("title").value.trim();
+        if(!id||!title)return null;
+        const body=g("body").value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+        return {id,title,date:g("date").value.trim(),tag:g("tag").value.trim(),cover:g("cover").value.trim(),body};
+      });
+      await upsertContent("stories",stories);
+    }
+    set("Saved.","ok");
+    toast("Saved");
+  }catch(e){set("Error: "+(e.message||e),"err")}
+}
+async function seedMissingDefaults(){
+  if(!confirm("Write defaults into Supabase for any keys that are missing? Existing rows are left alone."))return;
+  try{
+    const toWrite=[];
+    for(const [k,v] of Object.entries(DEFAULTS)){
+      if(STATE.content[k]===undefined)toWrite.push({key:k,value:v,updated_at:new Date().toISOString()});
+    }
+    if(!toWrite.length){toast("Nothing to seed");return}
+    await sb("site_content?on_conflict=key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:toWrite});
+    await loadAll();
+    renderContent();
+    toast("Seeded "+toWrite.length+" keys");
+  }catch(e){toast("Seed failed: "+(e.message||e))}
+}
+
+/* ---------- VENTS TAB ---------- */
+function renderVents(){
+  const rows=STATE.vents||[];
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Vent board</h2><p class="hint">Moderate anonymous posts. Hidden posts are excluded from the public site.</p></div>
+    <span class="pill">${rows.length} posts</span></div>
+    ${rows.length?rows.map(v=>`
+      <div class="list-item" data-vent="${esc(v.id)}">
+        <div class="grow">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <strong>${esc(v.handle)}</strong>
+            <span class="pill">${esc(v.mood||"—")}</span>
+            <small style="color:var(--muted)">${new Date(v.created_at).toLocaleString()}</small>
+            ${v.hidden?'<span class="pill" style="background:#fbd9d4;color:#8a2b21">Hidden</span>':""}
+            ${v.reports?`<span class="pill new">${v.reports} reports</span>`:""}
+          </div>
+          <p style="margin:0;white-space:pre-wrap">${esc(v.body)}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-outline btn-sm" data-hide="${esc(v.id)}" data-state="${v.hidden?"false":"true"}">${v.hidden?"Unhide":"Hide"}</button>
+          <button class="btn btn-danger btn-sm" data-delete="${esc(v.id)}">Delete</button>
+        </div>
+      </div>`).join(""):`<div class="empty">No posts yet.</div>`}
+  `;
+  $$("[data-hide]").forEach(b=>b.addEventListener("click",async()=>{
+    const hidden=b.dataset.state==="true";
+    try{await sb(`vents?id=eq.${encodeURIComponent(b.dataset.hide)}`,{method:"PATCH",body:{hidden}});
+      const v=STATE.vents.find(x=>x.id===b.dataset.hide);if(v)v.hidden=hidden;renderVents();toast(hidden?"Hidden":"Unhidden")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+  $$("[data-delete]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Delete this post permanently?"))return;
+    try{await sb(`vents?id=eq.${encodeURIComponent(b.dataset.delete)}`,{method:"DELETE"});
+      STATE.vents=STATE.vents.filter(x=>x.id!==b.dataset.delete);renderVents();toast("Deleted")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+}
+
+/* ---------- STORY REPLIES TAB ---------- */
+function renderStories(){
+  const rows=STATE.storyReplies||[];
+  const stories=(STATE.content.stories)||DEFAULTS.stories||[];
+  const titleFor=id=>(stories.find(s=>s.id===id)||{}).title||id;
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Story replies</h2><p class="hint">Anonymous replies on Stories posts. Delete any that are unkind or unsafe.</p></div>
+    <span class="pill">${rows.length} replies</span></div>
+    ${rows.length?rows.map(r=>`
+      <div class="list-item">
+        <div class="grow">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+            <strong>${esc(r.handle)}</strong>
+            <span class="pill">${esc(titleFor(r.story_id))}</span>
+            <small style="color:var(--muted)">${new Date(r.created_at).toLocaleString()}</small>
+          </div>
+          <p style="margin:0;white-space:pre-wrap">${esc(r.body)}</p>
+        </div>
+        <button class="btn btn-danger btn-sm" data-del-story="${esc(r.id)}">Delete</button>
+      </div>`).join(""):`<div class="empty">No replies yet.</div>`}
+  `;
+  $$("[data-del-story]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Delete this reply?"))return;
+    try{await sb(`story_replies?id=eq.${encodeURIComponent(b.dataset.delStory)}`,{method:"DELETE"});
+      STATE.storyReplies=STATE.storyReplies.filter(x=>x.id!==b.dataset.delStory);renderStories();toast("Deleted")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+}
+
+/* ---------- BOOT ---------- */
+async function boot(){
+  if(!SB.url||!SB.anonKey){renderLogin();return}
+  const s=session();
+  if(!s||!s.access_token){renderLogin();return}
+  renderShell();
+  $("#app").innerHTML=`<div class="loading"><div class="spinner"></div><p>Loading…</p></div>`;
+  await loadAll();
+  renderShell();
+  renderTab();
+}
+boot();
+</script>
+</body>
+</html>
