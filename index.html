@@ -141,6 +141,22 @@ details.acc-plain>summary h3{margin:0;flex:1}
 .pf-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .pf-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pf-status{font-size:.86rem;color:var(--muted);font-weight:600}
+
+/* Blog editor */
+[hidden]{display:none!important}
+.fmt{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.fmt button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:5px 11px;font-size:.85rem;font-weight:600;min-height:34px}
+.fmt button:hover{background:var(--sage)}
+.fmt .sp{flex:1}
+.post-body{min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem;line-height:1.6}
+.preview{border:1.5px dashed var(--line);border-radius:14px;padding:18px 20px;background:#fff;margin-bottom:12px}
+.prose{font-size:1.02rem;line-height:1.75}
+.prose h2{font-size:1.5rem;margin:1.2em 0 .4em}
+.prose h3{font-size:1.2rem;margin:1.1em 0 .4em}
+.prose p{margin:0 0 1em}
+.prose ul,.prose ol{margin:0 0 1em;padding-left:1.3em}
+.prose blockquote{margin:1em 0;padding:4px 0 4px 18px;border-left:4px solid var(--petal);font-family:var(--display);font-size:1.15rem;color:var(--leaf)}
+.prose a{color:var(--stem);font-weight:600}
 </style>
 </head>
 <body>
@@ -150,6 +166,7 @@ details.acc-plain>summary h3{margin:0;flex:1}
   <nav id="adminNav" hidden>
     <a href="#images" data-tab="images">Images</a>
     <a href="#content" data-tab="content">Content</a>
+    <a href="#blog" data-tab="blog">Blog</a>
     <a href="#vents" data-tab="vents">Vent board</a>
     <a href="#stories" data-tab="stories">Story replies</a>
   </nav>
@@ -223,6 +240,11 @@ const DEFAULTS={
     {id:"how-daffodil-care-began",title:"How Daffodil Care began",date:"12 Sep 2026",tag:"Our story",cover:"",body:["Daffodil Care began as a student-led idea: that wellbeing is something communities can practise together, and that people should not have to carry difficult seasons alone.","What grew from those early gatherings is what you see today: Healing Circles, wellness education, mentorship, outreach and campus clubs.","We are still learning. We are still listening. And there is still room for you."]},
     {id:"what-happens-in-a-healing-circle",title:"What happens in a Healing Circle?",date:"28 Aug 2026",tag:"Programme",cover:"",body:["A first circle can feel unfamiliar. There is no agenda, no performance, no pressure to share.","The group follows agreed ground rules around respect and confidentiality. No advice is forced on anyone.","Some people come to speak. Many come just to listen. Both are welcome."]},
     {id:"small-conversations-make-a-difference",title:"Small conversations can make a difference",date:"14 Aug 2026",tag:"Community",cover:"",body:["Sometimes support starts with a simple question, a genuine listen and making space for another person.","You do not need to have the answers. Often the most helpful thing is to stay.","Small conversations, repeated over time, are how communities become places where people can heal."]}
+  ],
+  blog:[
+    {id:"welcome-to-the-daffodil-care-blog",title:"Welcome to the Daffodil Care blog",date:"2026-09-20",category:"Announcements",author:"Daffodil Care",cover:"",draft:false,
+     excerpt:"A new space for honest writing about mental health, wellbeing and community care.",
+     body:"This is our new home for writing about mental health and wellbeing, in plain language and with our community in mind.\n\n## What you'll find here\n\n- Practical guides you can use in everyday life\n- Reflections from our Healing Circles and meetups\n- Ways to support a friend, a family member or yourself\n\nEverything we publish is for information and encouragement. It is not a replacement for professional care.\n\nIf something here stays with you, you are welcome to talk to us or share how you feel anonymously on our Vent here page."}
   ]
 };
 
@@ -392,6 +414,7 @@ function renderShell(){
 function renderTab(){
   if(STATE.tab==="images")return renderImages();
   if(STATE.tab==="content")return renderContent();
+  if(STATE.tab==="blog")return renderBlog();
   if(STATE.tab==="vents")return renderVents();
   if(STATE.tab==="stories")return renderStories();
 }
@@ -851,6 +874,161 @@ function renderStories(){
       STATE.storyReplies=STATE.storyReplies.filter(x=>x.id!==b.dataset.delStory);renderStories();toast("Deleted")}
     catch(e){toast("Failed: "+(e.message||e))}
   }));
+}
+
+/* ---------- BLOG TAB ---------- */
+function slugify(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)||"post"}
+function inlineMd(s){
+  return esc(s)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g,"$1<em>$2</em>");
+}
+function mdToHtml(text){
+  return String(text||"").split(/\n\s*\n/).map(block=>{
+    block=block.trim();if(!block)return"";
+    const lines=block.split("\n");
+    if(lines.length===1&&/^###\s+/.test(block))return `<h3>${inlineMd(block.replace(/^###\s+/,""))}</h3>`;
+    if(lines.length===1&&/^##\s+/.test(block))return `<h2>${inlineMd(block.replace(/^##\s+/,""))}</h2>`;
+    if(lines.every(l=>/^[-*]\s+/.test(l)))return `<ul>${lines.map(l=>`<li>${inlineMd(l.replace(/^[-*]\s+/,""))}</li>`).join("")}</ul>`;
+    if(lines.every(l=>/^\d+[.)]\s+/.test(l)))return `<ol>${lines.map(l=>`<li>${inlineMd(l.replace(/^\d+[.)]\s+/,""))}</li>`).join("")}</ol>`;
+    if(lines.every(l=>/^>\s?/.test(l)))return `<blockquote>${inlineMd(lines.map(l=>l.replace(/^>\s?/,"")).join(" "))}</blockquote>`;
+    return `<p>${inlineMd(lines.join("\n")).replace(/\n/g,"<br>")}</p>`;
+  }).join("");
+}
+function blogRow(p={}){
+  const draft=!!p.draft;
+  const bodyText=Array.isArray(p.body)?p.body.join("\n\n"):String(p.body||"");
+  const today=new Date().toISOString().slice(0,10);
+  const dateVal=/^\d{4}-\d{2}-\d{2}$/.test(p.date||"")?p.date:(p.date?"":today);
+  return `<details class="list-item item" data-post ${p.title?"":"open"}>
+    <summary><span class="item-title" data-title data-fallback="New post">${esc(p.title||"New post")}</span><span class="pill ${draft?"new":"ok"}" data-state-pill>${draft?"Draft":"Published"}</span><button class="del" type="button" data-del>Remove</button></summary>
+    <div class="item-body grow">
+      <div class="field"><label>Title</label><input data-f="title" value="${esc(p.title||"")}" placeholder="Post title"></div>
+      <div class="row-3">
+        <div class="field"><label>Date</label><input data-f="date" type="date" value="${esc(dateVal)}"></div>
+        <div class="field"><label>Category</label><input data-f="category" value="${esc(p.category||"")}" placeholder="e.g. Wellbeing"></div>
+        <div class="field"><label>Status</label><select data-f="status"><option value="published" ${draft?"":"selected"}>Published</option><option value="draft" ${draft?"selected":""}>Draft (hidden)</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Author</label><input data-f="author" value="${esc(p.author||"Daffodil Care")}"></div>
+        <div class="field"><label>URL slug</label><input data-f="id" value="${esc(p.id||"")}" placeholder="auto-generated from the title"></div>
+      </div>
+      <div class="field"><label>Excerpt (shown on cards)</label><textarea data-f="excerpt" style="min-height:70px" placeholder="One or two sentences">${esc(p.excerpt||"")}</textarea></div>
+      <div class="pf-cap">Cover image</div>
+      ${photoField(p.cover||"",{prefix:"blog"})}
+      <div class="pf-cap">Article</div>
+      <div class="fmt" role="toolbar" aria-label="Formatting">
+        <button type="button" data-fmt="bold"><b>B</b></button>
+        <button type="button" data-fmt="italic"><i>I</i></button>
+        <button type="button" data-fmt="h2">Heading</button>
+        <button type="button" data-fmt="h3">Subheading</button>
+        <button type="button" data-fmt="ul">• List</button>
+        <button type="button" data-fmt="ol">1. List</button>
+        <button type="button" data-fmt="quote">Quote</button>
+        <button type="button" data-fmt="link">Link</button>
+        <span class="sp"></span>
+        <button type="button" data-preview>Preview</button>
+      </div>
+      <div class="field"><textarea class="post-body" data-f="body" placeholder="Write your article. Leave a blank line between paragraphs.">${esc(bodyText)}</textarea></div>
+      <div class="preview prose" data-preview-box hidden></div>
+      ${p.id?`<p class="hint" style="margin:0;color:var(--muted);font-size:.85rem"><a class="btn btn-outline btn-sm" href="${CONFIG.publicSiteUrl}#/blog/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View on site ↗</a></p>`:""}
+    </div>
+  </details>`;
+}
+function renderBlog(){
+  const posts=(STATE.content.blog!==undefined?STATE.content.blog:DEFAULTS.blog)||[];
+  const sorted=posts.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Blog</h2><p class="hint">Write and publish articles. Drafts stay hidden from the public site. Press Save to push changes live.</p></div>
+    <div class="head-acts"><button class="btn btn-outline btn-sm" id="addPost">+ New post</button><button class="btn btn-dark btn-sm" id="saveBlog">Save blog</button></div></div>
+    <div class="empty" id="blogEmpty" ${sorted.length?"hidden":""}>No posts yet. Press “+ New post” to write your first one.</div>
+    <div id="blogList">${sorted.map(blogRow).join("")}</div>
+    <p class="status" id="st-blog"></p>`;
+  const list=$("#blogList");
+  $("#addPost").onclick=()=>{
+    const tmp=document.createElement("div");tmp.innerHTML=blogRow({draft:true});
+    const el=tmp.firstElementChild;el.open=true;list.prepend(el);
+    $("#blogEmpty").hidden=true;$('[data-f="title"]',el).focus();
+  };
+  $("#saveBlog").onclick=saveBlog;
+  list.addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]");
+    if(del){
+      e.preventDefault();e.stopPropagation();
+      if(!confirm("Remove this post? It is deleted from the site once you press Save blog."))return;
+      del.closest("[data-post]").remove();
+      $("#blogEmpty").hidden=!!$$("[data-post]",list).length;
+      return;
+    }
+    const f=e.target.closest("[data-fmt]");
+    if(f){applyFmt($(".post-body",f.closest("[data-post]")),f.dataset.fmt);return}
+    const pv=e.target.closest("[data-preview]");
+    if(pv){
+      const row=pv.closest("[data-post]"),box=$("[data-preview-box]",row),ta=$(".post-body",row);
+      const show=box.hidden;
+      box.hidden=!show;ta.closest(".field").hidden=show;
+      pv.textContent=show?"Edit":"Preview";
+      if(show)box.innerHTML=mdToHtml(ta.value)||'<p style="color:var(--muted)">Nothing to preview yet.</p>';
+    }
+  });
+  list.addEventListener("change",e=>{
+    const s=e.target.closest('[data-f="status"]');
+    if(!s)return;
+    const pill=$("[data-state-pill]",s.closest("[data-post]")),d=s.value==="draft";
+    pill.textContent=d?"Draft":"Published";pill.className="pill "+(d?"new":"ok");
+  });
+}
+function applyFmt(ta,kind){
+  const v=ta.value,s=ta.selectionStart,e=ta.selectionEnd,sel=v.slice(s,e);
+  let out,ns,ne;
+  if(kind==="bold"||kind==="italic"){
+    const m=kind==="bold"?"**":"*",t=sel||(kind==="bold"?"bold text":"italic text");
+    out=v.slice(0,s)+m+t+m+v.slice(e);ns=s+m.length;ne=ns+t.length;
+  }else if(kind==="link"){
+    let url=prompt("Link address (https://…)");if(!url)return;
+    if(!/^https?:\/\//i.test(url))url="https://"+url;
+    const t=sel||"link text",ins=`[${t}](${url})`;
+    out=v.slice(0,s)+ins+v.slice(e);ns=s+1;ne=ns+t.length;
+  }else{
+    const ls=v.lastIndexOf("\n",s-1)+1;let le=v.indexOf("\n",e);if(le<0)le=v.length;
+    const block=v.slice(ls,le)||"Text";
+    const lines=block.split("\n").map(l=>l.replace(/^(#{2,3}\s+|[-*]\s+|\d+[.)]\s+|>\s?)/,""));
+    const pre={h2:()=>"## ",h3:()=>"### ",ul:()=>"- ",ol:i=>(i+1)+". ",quote:()=>"> "}[kind];
+    const single=(kind==="h2"||kind==="h3")?[lines.join(" ")]:lines;
+    const made=single.map((l,i)=>pre(i)+l).join("\n");
+    let before=v.slice(0,ls),after=v.slice(le);
+    if(before&&!before.endsWith("\n\n"))before+=before.endsWith("\n")?"\n":"\n\n";
+    if(after&&!after.startsWith("\n\n"))after=(after.startsWith("\n")?"\n":"\n\n")+after.replace(/^\n/,"");
+    out=before+made+after;ns=before.length;ne=ns+made.length;
+  }
+  ta.value=out;ta.focus();ta.setSelectionRange(ns,ne);
+}
+async function saveBlog(){
+  const st=$("#st-blog"),set=(t,c)=>{st.textContent=t;st.className="status "+c};
+  if($("#blogList [data-busy]")){set("A photo is still uploading. Try again in a moment.","err");return}
+  const today=new Date().toISOString().slice(0,10),seen=new Set(),posts=[];
+  for(const row of $$("#blogList [data-post]")){
+    const g=f=>row.querySelector(`[data-f="${f}"]`);
+    const title=g("title").value.trim();
+    if(!title){set("Every post needs a title. Add one or remove the empty post.","err");row.open=true;g("title").focus();return}
+    let id=slugify(g("id").value.trim()||title),base=id,n=2;
+    while(seen.has(id))id=base+"-"+n++;
+    seen.add(id);g("id").value=id;
+    posts.push({
+      id,title,
+      date:g("date").value||today,
+      category:g("category").value.trim(),
+      author:g("author").value.trim(),
+      cover:photoUrl(row),
+      draft:g("status").value==="draft",
+      excerpt:g("excerpt").value.trim(),
+      body:g("body").value.replace(/\r\n/g,"\n").trim()
+    });
+  }
+  set("Saving…","");
+  try{await upsertContent("blog",posts);set("Saved. Published posts are live now.","ok");toast("Blog saved")}
+  catch(e){set("Error: "+(e.message||e),"err")}
 }
 
 /* ---------- global listeners: photo fields, expand/collapse, live titles ---------- */
