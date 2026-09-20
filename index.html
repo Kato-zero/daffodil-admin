@@ -35,8 +35,9 @@ button{cursor:pointer}
 .topbar nav a:hover{background:rgba(255,255,255,.12);color:#fff}
 .topbar nav a.on{background:var(--petal);color:#2b2506;font-weight:700}
 .who{display:flex;align-items:center;gap:10px;font-size:.86rem;color:#b8cec2;padding-left:8px;border-left:1px solid rgba(255,255,255,.15)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;border-radius:999px;border:2px solid transparent;text-decoration:none;font-weight:700;font-size:.95rem;line-height:1.2;transition:transform .15s,background .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;border-radius:999px;border:2px solid transparent;text-decoration:none;font-weight:700;font-size:.95rem;line-height:1.2;transition:transform .15s,background .15s;cursor:pointer}
 .btn:hover{transform:translateY(-1px)}
+.btn:focus-within{outline:3px solid var(--petal);outline-offset:3px}
 .btn-primary{background:var(--petal);color:#2b2506}
 .btn-primary:hover{background:var(--petal2)}
 .btn-dark{background:var(--leaf);color:#fff}
@@ -47,6 +48,7 @@ button{cursor:pointer}
 .btn-danger:hover{background:#fdecea}
 .btn-sm{min-height:34px;padding:6px 12px;font-size:.82rem}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
 .page{padding:28px 0 80px}
 .card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:20px}
 .card h2{margin-bottom:6px;font-size:1.5rem}
@@ -70,7 +72,7 @@ button{cursor:pointer}
 .slot.uploading{opacity:.5;pointer-events:none}
 .slot .thumb{aspect-ratio:4/3;background:linear-gradient(160deg,var(--stem),var(--leaf)) center/40% no-repeat;position:relative;overflow:hidden}
 .slot .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.slot .thumb .empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.7);font-size:.82rem;text-align:center;padding:12px}
+.slot .thumb .empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.7);font-size:.82rem;text-align:center;padding:12px;border:0}
 .slot .info{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:6px}
 .slot .info b{font-size:.9rem;font-weight:600;word-break:break-word}
 .slot .info small{color:var(--muted);font-size:.75rem;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
@@ -102,6 +104,16 @@ button{cursor:pointer}
 .loading{text-align:center;padding:60px 20px;color:var(--muted)}
 .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--sage);border-top-color:var(--stem);border-radius:50%;animation:sp 0.8s linear infinite;margin-bottom:14px}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* Gallery photo manager */
+.gal-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin:4px 0 10px}
+.gal-photos:empty{display:none}
+.gthumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sage);border:1px solid var(--line)}
+.gthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.gthumb .rm{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(8,42,31,.78);color:#fff;font-size:1.05rem;line-height:1;display:grid;place-items:center;padding:0}
+.gthumb .rm:hover{background:var(--danger)}
+.gal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gal-status{font-size:.86rem;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -276,22 +288,43 @@ async function deleteContent(key){
 }
 
 /* ---------- image upload ---------- */
-async function uploadImage(key,file){
+/* Shrinks big phone photos before upload (max 2000px, JPEG) so uploads are fast on slow connections. */
+async function shrinkImage(file,max=2000,quality=.85){
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))return file;
+  try{
+    const bmp=await createImageBitmap(file);
+    const ratio=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    if(ratio===1&&file.size<1.5*1024*1024)return file;
+    const c=document.createElement("canvas");
+    c.width=Math.round(bmp.width*ratio);c.height=Math.round(bmp.height*ratio);
+    const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(bmp,0,0,c.width,c.height);
+    const blob=await new Promise(res=>c.toBlob(res,"image/jpeg",quality));
+    if(!blob||blob.size>=file.size)return file;
+    return new File([blob],file.name.replace(/\.\w+$/,"")+".jpg",{type:"image/jpeg"});
+  }catch{return file}
+}
+/* Uploads one file to the storage bucket and returns its public URL. */
+async function uploadFile(prefix,file){
   const s=session();if(!s)throw new Error("Not signed in");
-  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
-  const safe=key.replace(/[^a-z0-9._-]/gi,"_");
-  const path=`${safe}/${Date.now()}.${ext}`;
+  file=await shrinkImage(file);
+  if(file.size>8*1024*1024)throw new Error("Image is too large (max 8 MB)");
+  const ext=((file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,""))||"jpg";
+  const path=`${prefix}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
   const up=await fetch(`${baseUrl()}/storage/v1/object/${SB.bucket}/${path}`,{
     method:"POST",
     headers:{Authorization:"Bearer "+s.access_token,apikey:SB.anonKey,"Content-Type":file.type||"image/jpeg","x-upsert":"true"},
     body:file
   });
   if(!up.ok)throw new Error(await up.text());
-  const url=`${baseUrl()}/storage/v1/object/public/${SB.bucket}/${path}`;
+  return `${baseUrl()}/storage/v1/object/public/${SB.bucket}/${path}`;
+}
+async function uploadImage(key,file){
+  const safe=key.replace(/[^a-z0-9._-]/gi,"_");
+  const url=await uploadFile(safe,file);
   await sb("site_images?on_conflict=key",{method:"POST",
     headers:{Prefer:"resolution=merge-duplicates,return=representation"},
     body:[{key,url,updated_at:new Date().toISOString()}]});
-  // refresh in-memory
   const existing=STATE.images.find(x=>x.key===key);
   if(existing)existing.url=url;else STATE.images.push({key,url});
   return url;
@@ -302,6 +335,8 @@ async function removeImage(key){
 }
 
 /* ---------- image slots: build from defaults + any custom keys already in DB ---------- */
+/* Gallery photos are now managed from the Content tab (upload right inside each gallery event),
+   so only the gallery cover shows up here. */
 function imageSlots(){
   const gallery=(STATE.content.gallery)||DEFAULTS.gallery||[];
   const team=(STATE.content.team)||DEFAULTS.team||[];
@@ -309,11 +344,7 @@ function imageSlots(){
   const events=(STATE.content.events)||DEFAULTS.events||[];
   const slots=[...DEFAULT_IMAGE_KEYS];
   events.forEach((e,i)=>slots.push({key:`photos.event.${i}`,label:`Event ${i+1} — ${e.title||"image"}`,group:"Events"}));
-  gallery.forEach((g,i)=>{
-    slots.push({key:`gallery.${i}.cover`,label:`${g.title||"Event "+(i+1)} — cover`,group:"Gallery"});
-    const phCount=Math.max((g.photos||[]).length,0);
-    for(let j=0;j<phCount;j++)slots.push({key:`gallery.${i}.photo.${j}`,label:`${g.title||"Event "+(i+1)} — photo ${j+1}`,group:"Gallery"});
-  });
+  gallery.forEach((g,i)=>slots.push({key:`gallery.${i}.cover`,label:`${g.title||"Event "+(i+1)} — cover`,group:"Gallery"}));
   team.forEach((m,i)=>slots.push({key:`team.${i}.photo`,label:`${m.name||"Team "+(i+1)} — photo`,group:"Team"}));
   stories.forEach((s,i)=>slots.push({key:`stories.${i}.cover`,label:`${s.title||"Story "+(i+1)} — cover`,group:"Stories"}));
   return slots;
@@ -369,7 +400,7 @@ function renderImages(){
   const groups=[...new Set(slots.map(s=>s.group))];
   const missing=slots.filter(s=>!imageUrlFor(s.key)).length;
   $("#app").innerHTML=`
-    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace any image on the public site. Changes appear instantly.</p></div>
+    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace any image on the public site. Changes appear instantly. Gallery photos are added in the Content tab.</p></div>
     <div><span class="pill">${slots.length} slots</span> ${missing?`<span class="pill new">${missing} missing</span>`:'<span class="pill ok">All set</span>'}</div></div>
     ${groups.map(g=>`<h3 style="margin:26px 0 12px;font-size:1.1rem">${esc(g)}</h3>
       <div class="grid-images">${slots.filter(s=>s.group===g).map(slotCard).join("")}</div>`).join("")}
@@ -378,7 +409,6 @@ function renderImages(){
     inp.addEventListener("change",async e=>{
       const key=e.target.dataset.upload,file=e.target.files[0];
       if(!file)return;
-      if(file.size>8*1024*1024){toast("Image too large (max 8 MB)");e.target.value="";return}
       const slot=e.target.closest(".slot");slot.classList.add("uploading");
       try{await uploadImage(key,file);toast("Uploaded");renderImages()}
       catch(err){toast("Upload failed: "+(err.message||err));slot.classList.remove("uploading")}
@@ -467,7 +497,7 @@ function renderContent(){
       <p class="status" id="st-events"></p>
     </div>
 
-    <div class="card"><h2>Gallery</h2><p class="sub">Each gallery event shows on the Gallery page. Add photos, then upload their images from the Images tab.</p>
+    <div class="card"><h2>Gallery</h2><p class="sub">Each gallery event shows on the Gallery page. Use “Add photos” to upload pictures straight from your phone or computer, then press Save to publish them.</p>
       <div id="galleryList">${(get("gallery")||[]).map(galleryRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addGallery">+ Add gallery event</button>
       <button class="btn btn-dark btn-sm" data-save-block="gallery" style="margin-left:8px">Save</button>
@@ -539,8 +569,11 @@ function eventRow(e={},i){
     <button class="del" type="button" data-del>Remove</button>
   </div>`;
 }
+function galleryThumb(url){
+  return `<div class="gthumb" data-url="${esc(url)}"><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><button type="button" class="rm" data-rm-photo aria-label="Remove photo">×</button></div>`;
+}
 function galleryRow(g={},i){
-  const photos=(g.photos||[]).map(p=>typeof p==="string"?{src:p}:p);
+  const photos=(g.photos||[]).map(p=>typeof p==="string"?p:(p&&p.src)||"").filter(Boolean);
   return `<div class="list-item" data-gallery>
     <div class="grow">
       <div class="row">
@@ -548,11 +581,27 @@ function galleryRow(g={},i){
         <input data-f="date" value="${esc(g.date||"")}" placeholder="Date label">
       </div>
       <textarea data-f="about" placeholder="Short description">${esc(g.about||"")}</textarea>
-      <textarea data-f="photos" placeholder="One photo URL per line (or leave blank and upload images from the Images tab)">${esc(photos.map(p=>p.src).join("\n"))}</textarea>
-      <small style="color:var(--muted)">Slots in Images tab: <code>gallery.${i}.cover</code>, <code>gallery.${i}.photo.0</code>, <code>gallery.${i}.photo.1</code>…</small>
+      <div class="gal-photos">${photos.map(galleryThumb).join("")}</div>
+      <div class="gal-bar">
+        <label class="btn btn-outline btn-sm">+ Add photos<input class="vh" type="file" accept="image/*" multiple data-gal-upload></label>
+        <span class="gal-status" role="status" aria-live="polite"></span>
+      </div>
+      <small style="color:var(--muted);display:block;margin-top:8px">Cover image: upload from the Images tab (<code>gallery.${i}.cover</code>).</small>
     </div>
     <button class="del" type="button" data-del>Remove</button>
   </div>`;
+}
+async function addGalleryPhotos(row,files){
+  const box=$(".gal-photos",row),st=$(".gal-status",row);
+  row.dataset.busy="1";
+  let done=0,fail=0;
+  for(const f of files){
+    st.textContent=`Uploading ${done+fail+1} of ${files.length}…`;
+    try{const url=await uploadFile("gallery",f);box.insertAdjacentHTML("beforeend",galleryThumb(url));done++}
+    catch(e){fail++;toast("Upload failed: "+(e.message||e))}
+  }
+  delete row.dataset.busy;
+  st.textContent=done?`${done} photo${done>1?"s":""} added. Press Save to publish.`:"";
 }
 function teamRow(m={},i){
   return `<div class="list-item" data-team>
@@ -606,6 +655,21 @@ function wireContentSaves(){
   add("#addTeam","#teamList",teamRow);
   add("#addStory","#storiesList",storyRow);
   wireDeletes();
+  // gallery photo uploads / removals (delegated so newly added gallery events work too)
+  const gl=$("#galleryList");
+  if(gl){
+    gl.addEventListener("change",e=>{
+      const inp=e.target.closest("[data-gal-upload]");
+      if(!inp||!inp.files.length)return;
+      const row=inp.closest("[data-gallery]"),files=[...inp.files];
+      inp.value="";
+      addGalleryPhotos(row,files);
+    });
+    gl.addEventListener("click",e=>{
+      const b=e.target.closest("[data-rm-photo]");
+      if(b)b.closest(".gthumb").remove();
+    });
+  }
   $$("[data-save-block]").forEach(b=>b.addEventListener("click",()=>saveBlock(b.dataset.saveBlock)));
 }
 function wireDeletes(){
@@ -614,6 +678,7 @@ function wireDeletes(){
 async function saveBlock(block){
   const st=$("#st-"+block);
   const set=(t,c)=>{if(st){st.textContent=t;st.className="status "+c}};
+  if(block==="gallery"&&$("#galleryList [data-busy]")){set("Photos are still uploading. Try again in a moment.","err");return}
   set("Saving…","");
   try{
     if(block==="identity"){
@@ -669,7 +734,7 @@ async function saveBlock(block){
         const g=f=>row.querySelector(`[data-f="${f}"]`);
         const title=g("title").value.trim();
         if(!title)return null;
-        const photos=g("photos").value.split("\n").map(x=>x.trim()).filter(Boolean);
+        const photos=$$(".gthumb",row).map(t=>t.dataset.url).filter(Boolean);
         return {title,date:g("date").value.trim(),about:g("about").value.trim(),photos};
       });
       await upsertContent("gallery",gallery);
