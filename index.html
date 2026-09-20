@@ -114,6 +114,33 @@ button{cursor:pointer}
 .gthumb .rm:hover{background:var(--danger)}
 .gal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .gal-status{font-size:.86rem;color:var(--muted);font-weight:600}
+
+/* Expandable sections */
+details>summary{list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details.acc>summary,details.acc-plain>summary,details.item>summary{cursor:pointer;display:flex;align-items:center;gap:12px}
+details.acc>summary::after,details.acc-plain>summary::after,details.item>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 3px auto;flex:none;transition:transform .2s}
+details[open]>summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+details.acc>summary>div{flex:1;min-width:0}
+details.acc>summary h2{margin:0}
+details.acc>summary .sub{margin:2px 0 0}
+.acc-body{margin-top:18px}
+details.acc-plain{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px}
+details.acc-plain>summary h3{margin:0;flex:1}
+.acc-plain .grid-images{margin-top:16px}
+.list-item.item{display:block;padding:0}
+.item>summary{padding:12px 14px}
+.item>summary .item-title{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>summary .del{flex:none}
+.item-body{padding:2px 14px 14px}
+.head-acts{display:flex;gap:8px;flex-wrap:wrap}
+/* Photo upload field */
+.pf-cap{font-weight:600;font-size:.9rem;margin:6px 0 6px}
+.pf{display:flex;gap:12px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
+.pf-thumb{width:96px;height:96px;border-radius:12px;background:var(--sage);border:1px solid var(--line);overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:.78rem;text-align:center;flex:none}
+.pf-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pf-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pf-status{font-size:.86rem;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -243,6 +270,7 @@ const STATE={
   vents:[],            // for admin view
   storyReplies:[],     // for admin view
   tab:"images",
+  open:{},
   loading:false
 };
 const DEFAULT_IMAGE_KEYS=[
@@ -288,27 +316,10 @@ async function deleteContent(key){
 }
 
 /* ---------- image upload ---------- */
-/* Shrinks big phone photos before upload (max 2000px, JPEG) so uploads are fast on slow connections. */
-async function shrinkImage(file,max=2000,quality=.85){
-  if(!/^image\/(jpeg|png|webp)$/.test(file.type))return file;
-  try{
-    const bmp=await createImageBitmap(file);
-    const ratio=Math.min(1,max/Math.max(bmp.width,bmp.height));
-    if(ratio===1&&file.size<1.5*1024*1024)return file;
-    const c=document.createElement("canvas");
-    c.width=Math.round(bmp.width*ratio);c.height=Math.round(bmp.height*ratio);
-    const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
-    ctx.drawImage(bmp,0,0,c.width,c.height);
-    const blob=await new Promise(res=>c.toBlob(res,"image/jpeg",quality));
-    if(!blob||blob.size>=file.size)return file;
-    return new File([blob],file.name.replace(/\.\w+$/,"")+".jpg",{type:"image/jpeg"});
-  }catch{return file}
-}
 /* Uploads one file to the storage bucket and returns its public URL. */
 async function uploadFile(prefix,file){
   const s=session();if(!s)throw new Error("Not signed in");
-  file=await shrinkImage(file);
-  if(file.size>8*1024*1024)throw new Error("Image is too large (max 8 MB)");
+  if(file.size>50*1024*1024)throw new Error("Image is too large (max 50 MB)");
   const ext=((file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,""))||"jpg";
   const path=`${prefix}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
   const up=await fetch(`${baseUrl()}/storage/v1/object/${SB.bucket}/${path}`,{
@@ -334,20 +345,11 @@ async function removeImage(key){
   STATE.images=STATE.images.filter(x=>x.key!==key);
 }
 
-/* ---------- image slots: build from defaults + any custom keys already in DB ---------- */
-/* Gallery photos are now managed from the Content tab (upload right inside each gallery event),
-   so only the gallery cover shows up here. */
+/* ---------- image slots ----------
+   Team, story, event and gallery photos are uploaded inside their own sections on the Content tab.
+   Only the site-wide images live here. */
 function imageSlots(){
-  const gallery=(STATE.content.gallery)||DEFAULTS.gallery||[];
-  const team=(STATE.content.team)||DEFAULTS.team||[];
-  const stories=(STATE.content.stories)||DEFAULTS.stories||[];
-  const events=(STATE.content.events)||DEFAULTS.events||[];
-  const slots=[...DEFAULT_IMAGE_KEYS];
-  events.forEach((e,i)=>slots.push({key:`photos.event.${i}`,label:`Event ${i+1} — ${e.title||"image"}`,group:"Events"}));
-  gallery.forEach((g,i)=>slots.push({key:`gallery.${i}.cover`,label:`${g.title||"Event "+(i+1)} — cover`,group:"Gallery"}));
-  team.forEach((m,i)=>slots.push({key:`team.${i}.photo`,label:`${m.name||"Team "+(i+1)} — photo`,group:"Team"}));
-  stories.forEach((s,i)=>slots.push({key:`stories.${i}.cover`,label:`${s.title||"Story "+(i+1)} — cover`,group:"Stories"}));
-  return slots;
+  return [...DEFAULT_IMAGE_KEYS];
 }
 function imageUrlFor(key){const r=STATE.images.find(x=>x.key===key);return r?r.url:""}
 
@@ -400,10 +402,13 @@ function renderImages(){
   const groups=[...new Set(slots.map(s=>s.group))];
   const missing=slots.filter(s=>!imageUrlFor(s.key)).length;
   $("#app").innerHTML=`
-    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace any image on the public site. Changes appear instantly. Gallery photos are added in the Content tab.</p></div>
-    <div><span class="pill">${slots.length} slots</span> ${missing?`<span class="pill new">${missing} missing</span>`:'<span class="pill ok">All set</span>'}</div></div>
-    ${groups.map(g=>`<h3 style="margin:26px 0 12px;font-size:1.1rem">${esc(g)}</h3>
-      <div class="grid-images">${slots.filter(s=>s.group===g).map(slotCard).join("")}</div>`).join("")}
+    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace site-wide images. Changes appear instantly. Team, story, event and gallery photos are uploaded inside their sections on the Content tab.</p></div>
+    <div class="head-acts"><span class="pill">${slots.length} slots</span> ${missing?`<span class="pill new">${missing} missing</span>`:'<span class="pill ok">All set</span>'}
+    <button class="btn btn-outline btn-sm" data-expand="all">Expand all</button><button class="btn btn-outline btn-sm" data-expand="none">Collapse all</button></div></div>
+    ${groups.map(g=>{
+      const list=slots.filter(s=>s.group===g),miss=list.filter(s=>!imageUrlFor(s.key)).length,id="img-"+g;
+      return `<details class="acc-plain" data-acc="${esc(id)}" ${STATE.open[id]?"open":""}><summary><h3>${esc(g)}</h3><span class="pill">${list.length} slot${list.length>1?"s":""}</span>${miss?`<span class="pill new">${miss} missing</span>`:""}</summary>
+      <div class="grid-images">${list.map(slotCard).join("")}</div></details>`}).join("")}
   `;
   $$("[data-upload]").forEach(inp=>{
     inp.addEventListener("change",async e=>{
@@ -435,14 +440,17 @@ function slotCard(s){
 }
 
 /* ---------- CONTENT TAB ---------- */
+function acc(id,title,sub,body){
+  return `<details class="card acc" data-acc="${id}" ${STATE.open[id]?"open":""}><summary><div><h2>${title}</h2><p class="sub">${sub}</p></div></summary><div class="acc-body">${body}</div></details>`;
+}
 function renderContent(){
   const c=STATE.content;
   const get=(k)=>c[k]!==undefined?c[k]:DEFAULTS[k];
   $("#app").innerHTML=`
-    <div class="section-head"><div><h2 style="margin:0">Content</h2><p class="hint">Edit text on the public site. Save each block to push changes live.</p></div>
-    <button class="btn btn-outline btn-sm" id="seedDefaults">Seed missing defaults</button></div>
+    <div class="section-head"><div><h2 style="margin:0">Content</h2><p class="hint">Tap a section to open it. Save each block to push changes live.</p></div>
+    <div class="head-acts"><button class="btn btn-outline btn-sm" data-expand="all">Expand all</button><button class="btn btn-outline btn-sm" data-expand="none">Collapse all</button><button class="btn btn-outline btn-sm" id="seedDefaults">Seed missing defaults</button></div></div>
 
-    <div class="card"><h2>Contact & identity</h2><p class="sub">Shown in the footer and on the Contact page.</p>
+    ${acc("identity","Contact &amp; identity","Shown in the footer and on the Contact page.",`
       ${textField("site.email","Email","email")}
       ${textField("site.phone","Phone")}
       ${textField("site.whatsapp","WhatsApp URL")}
@@ -451,16 +459,14 @@ function renderContent(){
       ${textField("site.notice","Top notice bar")}
       ${textArea("site.footer_blurb","Footer blurb")}
       <button class="btn btn-dark btn-sm" data-save-block="identity">Save</button>
-      <p class="status" id="st-identity"></p>
-    </div>
+      <p class="status" id="st-identity"></p>`)}
 
-    <div class="card"><h2>Social links</h2>
+    ${acc("social","Social links","Links in the footer.",`
       ${["Facebook","Instagram","TikTok","LinkedIn"].map(k=>`<div class="field"><label for="social-${k}">${k}</label><input id="social-${k}" name="social-${k}" value="${esc((get("site.social")||{})[k]||"")}"></div>`).join("")}
       <button class="btn btn-dark btn-sm" data-save-block="social">Save</button>
-      <p class="status" id="st-social"></p>
-    </div>
+      <p class="status" id="st-social"></p>`)}
 
-    <div class="card"><h2>Home page text</h2>
+    ${acc("home","Home page text","Headings and intro text on the home page.",`
       ${textArea("home.hero_title","Hero title")}
       ${textArea("home.hero_lede","Hero lede")}
       ${textField("home.motto","Motto")}
@@ -473,50 +479,43 @@ function renderContent(){
       ${textField("home.involved_heading","Involved heading")}
       ${textArea("home.involved_lede","Involved lede")}
       <button class="btn btn-dark btn-sm" data-save-block="home">Save</button>
-      <p class="status" id="st-home"></p>
-    </div>
+      <p class="status" id="st-home"></p>`)}
 
-    <div class="card"><h2>Stats</h2><p class="sub">Four numbers on the home page.</p>
+    ${acc("stats","Stats","Four numbers on the home page.",`
       <div id="statsList">${(get("site.stats")||[]).map(statRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addStat">+ Add stat</button>
       <button class="btn btn-dark btn-sm" data-save-block="stats" style="margin-left:8px">Save</button>
-      <p class="status" id="st-stats"></p>
-    </div>
+      <p class="status" id="st-stats"></p>`)}
 
-    <div class="card"><h2>Programmes</h2><p class="sub">Six programme cards on Home and the Our work page.</p>
+    ${acc("programs","Programmes","Six programme cards on Home and the Our work page.",`
       <div id="programsList">${(get("programs")||[]).map(programRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addProgram">+ Add programme</button>
       <button class="btn btn-dark btn-sm" data-save-block="programs" style="margin-left:8px">Save</button>
-      <p class="status" id="st-programs"></p>
-    </div>
+      <p class="status" id="st-programs"></p>`)}
 
-    <div class="card"><h2>Events</h2><p class="sub">Shown on Stories & events page.</p>
+    ${acc("events","Events","Shown on the Stories &amp; events page. Upload each event's photo here; it goes live straight away.",`
       <div id="eventsList">${(get("events")||[]).map(eventRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addEvent">+ Add event</button>
       <button class="btn btn-dark btn-sm" data-save-block="events" style="margin-left:8px">Save</button>
-      <p class="status" id="st-events"></p>
-    </div>
+      <p class="status" id="st-events"></p>`)}
 
-    <div class="card"><h2>Gallery</h2><p class="sub">Each gallery event shows on the Gallery page. Use “Add photos” to upload pictures straight from your phone or computer, then press Save to publish them.</p>
+    ${acc("gallery","Gallery","Each gallery event shows on the Gallery page. Upload a cover and photos, then press Save.",`
       <div id="galleryList">${(get("gallery")||[]).map(galleryRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addGallery">+ Add gallery event</button>
       <button class="btn btn-dark btn-sm" data-save-block="gallery" style="margin-left:8px">Save</button>
-      <p class="status" id="st-gallery"></p>
-    </div>
+      <p class="status" id="st-gallery"></p>`)}
 
-    <div class="card"><h2>Team</h2><p class="sub">Photos upload from the Images tab.</p>
+    ${acc("team","Team","Upload a photo for each team member, then press Save.",`
       <div id="teamList">${(get("team")||[]).map(teamRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addTeam">+ Add member</button>
       <button class="btn btn-dark btn-sm" data-save-block="team" style="margin-left:8px">Save</button>
-      <p class="status" id="st-team"></p>
-    </div>
+      <p class="status" id="st-team"></p>`)}
 
-    <div class="card"><h2>Stories</h2><p class="sub">Blog-style posts on the Stories page. Each has a cover image (Images tab), body paragraphs, and anonymous replies (Story replies tab).</p>
+    ${acc("stories","Stories","Blog-style posts on the Stories page. Upload a cover image for each, then press Save. Replies are in the Story replies tab.",`
       <div id="storiesList">${(get("stories")||[]).map(storyRow).join("")}</div>
       <button class="btn btn-outline btn-sm" id="addStory">+ Add story</button>
       <button class="btn btn-dark btn-sm" data-save-block="stories" style="margin-left:8px">Save</button>
-      <p class="status" id="st-stories"></p>
-    </div>
+      <p class="status" id="st-stories"></p>`)}
   `;
   wireContentSaves();
   $("#seedDefaults").addEventListener("click",seedMissingDefaults);
@@ -542,54 +541,70 @@ function statRow(s={},i){
     <button class="del" type="button" data-del>Remove</button>
   </div>`;
 }
+
+/* Expandable list item: title row (with Remove) + body */
+function itemShell(attr,title,fallback,body){
+  return `<details class="list-item item" ${attr}><summary><span class="item-title" data-title data-fallback="${esc(fallback)}">${esc(title||fallback)}</span><button class="del" type="button" data-del>Remove</button></summary><div class="item-body grow">${body}</div></details>`;
+}
+
+/* Photo upload field. Either stores its URL in the row (Save publishes it),
+   or, with a slot, uploads straight to a site image slot (goes live immediately). */
+function pfInner(url){
+  return `<div class="pf-thumb">${url?`<img src="${esc(url)}" alt="" referrerpolicy="no-referrer">`:`<span>No photo</span>`}</div>
+  <div class="pf-acts"><label class="btn btn-outline btn-sm">${url?"Replace photo":"Upload photo"}<input class="vh" type="file" accept="image/*" data-pf-upload></label>${url?`<button type="button" class="btn btn-danger btn-sm" data-pf-clear>Remove</button>`:""}<span class="pf-status" role="status" aria-live="polite"></span></div>`;
+}
+function photoField(url,opts={}){
+  const attrs=opts.slot?`data-slot="${opts.slot}"`:`data-prefix="${esc(opts.prefix||"misc")}"`;
+  return `<div class="pf" data-photo ${attrs} data-url="${esc(url||"")}">${pfInner(url)}</div>`;
+}
+function setPhoto(box,url){box.dataset.url=url||"";box.innerHTML=pfInner(url)}
+function photoUrl(row){const b=row.querySelector("[data-photo]");return b?(b.dataset.url||""):""}
+function slotKeyFor(box){
+  if(box.dataset.slot==="gallery-cover"){const rows=$$("#galleryList [data-gallery]");return `gallery.${rows.indexOf(box.closest("[data-gallery]"))}.cover`}
+  if(box.dataset.slot==="event"){const rows=$$("#eventsList [data-event]");return `photos.event.${rows.indexOf(box.closest("[data-event]"))}`}
+  return "";
+}
+
 function programRow(p={},i){
-  return `<div class="list-item" data-program>
-    <div class="grow">
-      <div class="row">
-        <input data-f="icon" value="${esc(p.icon||"heart")}" placeholder="Icon (users/book/compass/heart/cap/brief)">
-        <input data-f="name" value="${esc(p.name||"")}" placeholder="Name">
-      </div>
-      <input data-f="short" value="${esc(p.short||"")}" placeholder="Short description">
-      <textarea data-f="body" placeholder="Full description">${esc(p.body||"")}</textarea>
-      <textarea data-f="points" placeholder="One point per line">${esc((p.points||[]).join("\n"))}</textarea>
+  return itemShell("data-program",p.name,"New programme",`
+    <div class="row">
+      <input data-f="icon" value="${esc(p.icon||"heart")}" placeholder="Icon (users/book/compass/heart/cap/brief)">
+      <input data-f="name" value="${esc(p.name||"")}" placeholder="Name">
     </div>
-    <button class="del" type="button" data-del>Remove</button>
-  </div>`;
+    <input data-f="short" value="${esc(p.short||"")}" placeholder="Short description">
+    <textarea data-f="body" placeholder="Full description">${esc(p.body||"")}</textarea>
+    <textarea data-f="points" placeholder="One point per line">${esc((p.points||[]).join("\n"))}</textarea>`);
 }
 function eventRow(e={},i){
-  return `<div class="list-item" data-event>
-    <div class="grow">
-      <div class="row">
-        <input data-f="date" value="${esc(e.date||"")}" placeholder="Date label">
-        <input data-f="venue" value="${esc(e.venue||"")}" placeholder="Venue">
-      </div>
-      <input data-f="title" value="${esc(e.title||"")}" placeholder="Event title">
-      <textarea data-f="text" placeholder="Description">${esc(e.text||"")}</textarea>
+  return itemShell("data-event",e.title,"New event",`
+    <div class="row">
+      <input data-f="date" value="${esc(e.date||"")}" placeholder="Date label">
+      <input data-f="venue" value="${esc(e.venue||"")}" placeholder="Venue">
     </div>
-    <button class="del" type="button" data-del>Remove</button>
-  </div>`;
+    <input data-f="title" value="${esc(e.title||"")}" placeholder="Event title">
+    <textarea data-f="text" placeholder="Description">${esc(e.text||"")}</textarea>
+    <div class="pf-cap">Event photo</div>
+    ${photoField(imageUrlFor(`photos.event.${i}`),{slot:"event"})}`);
 }
 function galleryThumb(url){
   return `<div class="gthumb" data-url="${esc(url)}"><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><button type="button" class="rm" data-rm-photo aria-label="Remove photo">×</button></div>`;
 }
 function galleryRow(g={},i){
   const photos=(g.photos||[]).map(p=>typeof p==="string"?p:(p&&p.src)||"").filter(Boolean);
-  return `<div class="list-item" data-gallery>
-    <div class="grow">
-      <div class="row">
-        <input data-f="title" value="${esc(g.title||"")}" placeholder="Event title">
-        <input data-f="date" value="${esc(g.date||"")}" placeholder="Date label">
-      </div>
-      <textarea data-f="about" placeholder="Short description">${esc(g.about||"")}</textarea>
-      <div class="gal-photos">${photos.map(galleryThumb).join("")}</div>
-      <div class="gal-bar">
-        <label class="btn btn-outline btn-sm">+ Add photos<input class="vh" type="file" accept="image/*" multiple data-gal-upload></label>
-        <span class="gal-status" role="status" aria-live="polite"></span>
-      </div>
-      <small style="color:var(--muted);display:block;margin-top:8px">Cover image: upload from the Images tab (<code>gallery.${i}.cover</code>).</small>
+  return itemShell("data-gallery",g.title,"New gallery event",`
+    <div class="row">
+      <input data-f="title" value="${esc(g.title||"")}" placeholder="Event title">
+      <input data-f="date" value="${esc(g.date||"")}" placeholder="Date label">
     </div>
-    <button class="del" type="button" data-del>Remove</button>
-  </div>`;
+    <textarea data-f="about" placeholder="Short description">${esc(g.about||"")}</textarea>
+    <div class="pf-cap">Cover image (goes live straight away)</div>
+    ${photoField(imageUrlFor(`gallery.${i}.cover`),{slot:"gallery-cover"})}
+    <div class="pf-cap">Photos</div>
+    <div class="gal-photos">${photos.map(galleryThumb).join("")}</div>
+    <div class="gal-bar">
+      <label class="btn btn-outline btn-sm">+ Add photos<input class="vh" type="file" accept="image/*" multiple data-gal-upload></label>
+      <span class="gal-status" role="status" aria-live="polite"></span>
+    </div>`);
 }
 async function addGalleryPhotos(row,files){
   const box=$(".gal-photos",row),st=$(".gal-status",row);
@@ -604,33 +619,25 @@ async function addGalleryPhotos(row,files){
   st.textContent=done?`${done} photo${done>1?"s":""} added. Press Save to publish.`:"";
 }
 function teamRow(m={},i){
-  return `<div class="list-item" data-team>
-    <div class="grow">
-      <div class="row">
-        <input data-f="name" value="${esc(m.name||"")}" placeholder="Name">
-        <input data-f="role" value="${esc(m.role||"")}" placeholder="Role">
-      </div>
-      <input data-f="photo" value="${esc(m.photo||"")}" placeholder="Photo URL (or leave blank and upload from Images tab)">
-      <small style="color:var(--muted)">Slot in Images tab: <code>team.${i}.photo</code></small>
+  return itemShell("data-team",m.name,"New team member",`
+    <div class="row">
+      <input data-f="name" value="${esc(m.name||"")}" placeholder="Name">
+      <input data-f="role" value="${esc(m.role||"")}" placeholder="Role">
     </div>
-    <button class="del" type="button" data-del>Remove</button>
-  </div>`;
+    <div class="pf-cap">Photo</div>
+    ${photoField(m.photo||imageUrlFor(`team.${i}.photo`),{prefix:"team"})}`);
 }
 function storyRow(s={},i){
-  return `<div class="list-item" data-story>
-    <div class="grow">
-      <div class="row-3">
-        <input data-f="id" value="${esc(s.id||"")}" placeholder="Slug (unique)">
-        <input data-f="date" value="${esc(s.date||"")}" placeholder="Date">
-        <input data-f="tag" value="${esc(s.tag||"")}" placeholder="Tag">
-      </div>
-      <input data-f="title" value="${esc(s.title||"")}" placeholder="Title">
-      <input data-f="cover" value="${esc(s.cover||"")}" placeholder="Cover URL (or upload from Images tab)">
-      <textarea data-f="body" placeholder="Body — separate paragraphs with a blank line">${esc((s.body||[]).join("\n\n"))}</textarea>
-      <small style="color:var(--muted)">Slot in Images tab: <code>stories.${i}.cover</code></small>
+  return itemShell("data-story",s.title,"New story",`
+    <div class="row-3">
+      <input data-f="id" value="${esc(s.id||"")}" placeholder="Slug (unique)">
+      <input data-f="date" value="${esc(s.date||"")}" placeholder="Date">
+      <input data-f="tag" value="${esc(s.tag||"")}" placeholder="Tag">
     </div>
-    <button class="del" type="button" data-del>Remove</button>
-  </div>`;
+    <input data-f="title" value="${esc(s.title||"")}" placeholder="Title">
+    <div class="pf-cap">Cover image</div>
+    ${photoField(s.cover||imageUrlFor(`stories.${i}.cover`),{prefix:"stories"})}
+    <textarea data-f="body" placeholder="Body — separate paragraphs with a blank line">${esc((s.body||[]).join("\n\n"))}</textarea>`);
 }
 
 /* collect rows back into arrays */
@@ -646,7 +653,8 @@ function wireContentSaves(){
   // add buttons
   const add=(id,listSel,tpl)=>{const b=$(id);if(!b)return;b.addEventListener("click",()=>{
     const list=$(listSel);const tmp=document.createElement("div");tmp.innerHTML=tpl({},list.children.length);
-    list.appendChild(tmp.firstElementChild);wireDeletes();
+    const el=tmp.firstElementChild;if(el.tagName==="DETAILS")el.open=true;
+    list.appendChild(el);wireDeletes();
   })};
   add("#addStat","#statsList",statRow);
   add("#addProgram","#programsList",programRow);
@@ -673,12 +681,13 @@ function wireContentSaves(){
   $$("[data-save-block]").forEach(b=>b.addEventListener("click",()=>saveBlock(b.dataset.saveBlock)));
 }
 function wireDeletes(){
-  $$("[data-del]").forEach(b=>b.onclick=()=>b.closest(".list-item").remove());
+  $$("[data-del]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();b.closest(".list-item").remove()});
 }
 async function saveBlock(block){
   const st=$("#st-"+block);
   const set=(t,c)=>{if(st){st.textContent=t;st.className="status "+c}};
-  if(block==="gallery"&&$("#galleryList [data-busy]")){set("Photos are still uploading. Try again in a moment.","err");return}
+  const listSel={gallery:"#galleryList",team:"#teamList",stories:"#storiesList",events:"#eventsList"}[block];
+  if(listSel&&$(listSel+" [data-busy]")){set("Photos are still uploading. Try again in a moment.","err");return}
   set("Saving…","");
   try{
     if(block==="identity"){
@@ -744,7 +753,7 @@ async function saveBlock(block){
         const g=f=>row.querySelector(`[data-f="${f}"]`);
         const name=g("name").value.trim();
         if(!name)return null;
-        return {name,role:g("role").value.trim(),photo:g("photo").value.trim()};
+        return {name,role:g("role").value.trim(),photo:photoUrl(row)};
       });
       await upsertContent("team",team);
     }
@@ -754,7 +763,7 @@ async function saveBlock(block){
         const id=g("id").value.trim(),title=g("title").value.trim();
         if(!id||!title)return null;
         const body=g("body").value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
-        return {id,title,date:g("date").value.trim(),tag:g("tag").value.trim(),cover:g("cover").value.trim(),body};
+        return {id,title,date:g("date").value.trim(),tag:g("tag").value.trim(),cover:photoUrl(row),body};
       });
       await upsertContent("stories",stories);
     }
@@ -843,6 +852,50 @@ function renderStories(){
     catch(e){toast("Failed: "+(e.message||e))}
   }));
 }
+
+/* ---------- global listeners: photo fields, expand/collapse, live titles ---------- */
+document.addEventListener("change",async e=>{
+  const inp=e.target.closest("[data-pf-upload]");
+  if(!inp||!inp.files.length)return;
+  const box=inp.closest("[data-photo]"),file=inp.files[0];
+  inp.value="";
+  const st=$(".pf-status",box);
+  box.dataset.busy="1";st.textContent="Uploading…";
+  try{
+    let url,msg;
+    if(box.dataset.slot){url=await uploadImage(slotKeyFor(box),file);msg="Uploaded and live."}
+    else{url=await uploadFile(box.dataset.prefix||"misc",file);msg="Uploaded. Press Save to publish."}
+    setPhoto(box,url);$(".pf-status",box).textContent=msg;
+  }catch(err){st.textContent="";toast("Upload failed: "+(err.message||err))}
+  delete box.dataset.busy;
+});
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-pf-clear]");
+  if(b){
+    const box=b.closest("[data-photo]");
+    if(box.dataset.slot){
+      if(!confirm("Remove this photo from the site now?"))return;
+      try{await removeImage(slotKeyFor(box));setPhoto(box,"");toast("Removed")}
+      catch(err){toast("Couldn't remove: "+(err.message||err))}
+    }else setPhoto(box,"");
+    return;
+  }
+  const x=e.target.closest("[data-expand]");
+  if(x){
+    const open=x.dataset.expand==="all";
+    $$("details[data-acc]").forEach(d=>{d.open=open;STATE.open[d.dataset.acc]=open});
+  }
+});
+document.addEventListener("toggle",e=>{
+  const d=e.target;
+  if(d&&d.dataset&&d.dataset.acc)STATE.open[d.dataset.acc]=d.open;
+},true);
+document.addEventListener("input",e=>{
+  const inp=e.target.closest('.item [data-f="title"], .item [data-f="name"]');
+  if(!inp)return;
+  const t=inp.closest(".item").querySelector("[data-title]");
+  if(t)t.textContent=inp.value.trim()||t.dataset.fallback;
+});
 
 /* ---------- BOOT ---------- */
 async function boot(){
