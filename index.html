@@ -185,6 +185,79 @@ const CONFIG={
   publicSiteUrl:"index.html"
 };
 
+/* ---------- session inactivity auto-logout ---------- */
+const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+const INACTIVITY_WARN_MS  = 60 * 1000;     // warn 1 minute before logout
+let inactivityTimer = null;
+let inactivityWarnTimer = null;
+let lastActivityAt = Date.now();
+
+function clearInactivityTimers(){
+  if(inactivityTimer){clearTimeout(inactivityTimer);inactivityTimer=null}
+  if(inactivityWarnTimer){clearTimeout(inactivityWarnTimer);inactivityWarnTimer=null}
+}
+
+function doInactivityLogout(){
+  clearInactivityTimers();
+  LS.set("dc_admin_idle_deadline", 0);
+  signOut();
+  toast("Signed out after 5 minutes of inactivity.");
+  // Wipe any in-memory state so nothing lingers
+  STATE.content={};STATE.images=[];STATE.vents=[];STATE.storyReplies=[];
+  renderLogin();
+}
+
+function scheduleInactivityTimers(){
+  clearInactivityTimers();
+  const since = Date.now() - lastActivityAt;
+  const remaining = INACTIVITY_LIMIT_MS - since;
+  if(remaining <= 0){doInactivityLogout();return}
+
+  inactivityTimer = setTimeout(doInactivityLogout, remaining);
+  if(remaining > INACTIVITY_WARN_MS){
+    inactivityWarnTimer = setTimeout(()=>{
+      // Only warn if user is still signed in and still idle
+      if(session() && (Date.now()-lastActivityAt) >= (INACTIVITY_LIMIT_MS - INACTIVITY_WARN_MS)){
+        toast("You'll be signed out in 1 minute due to inactivity.");
+      }
+    }, remaining - INACTIVITY_WARN_MS);
+  }
+}
+
+function registerActivity(){
+  if(!session())return;
+  // Throttle writes: only reset timers if more than 5s since last activity
+  if(Date.now() - lastActivityAt < 5000)return;
+  lastActivityAt = Date.now();
+  LS.set("dc_admin_idle_deadline", lastActivityAt + INACTIVITY_LIMIT_MS);
+  scheduleInactivityTimers();
+}
+
+function startInactivityWatch(){
+  clearInactivityTimers();
+  if(!session())return;
+  // Resume from a previously stored deadline (survives refresh)
+  const storedDeadline = LS.get("dc_admin_idle_deadline", 0);
+  if(storedDeadline && storedDeadline > Date.now()){
+    lastActivityAt = storedDeadline - INACTIVITY_LIMIT_MS;
+  } else {
+    lastActivityAt = Date.now();
+  }
+  LS.set("dc_admin_idle_deadline", lastActivityAt + INACTIVITY_LIMIT_MS);
+  scheduleInactivityTimers();
+  ["mousemove","mousedown","keydown","touchstart","scroll","click","input"].forEach(evt=>{
+    // capture:true so scroll inside nested containers is caught too
+    window.addEventListener(evt, registerActivity, {passive:true, capture:true});
+  });
+}
+
+function stopInactivityWatch(){
+  clearInactivityTimers();
+  ["mousemove","mousedown","keydown","touchstart","scroll","click","input"].forEach(evt=>{
+    window.removeEventListener(evt, registerActivity, {capture:true});
+  });
+}
+
 /* ---------- defaults mirrored from the public site so we can seed Supabase ---------- */
 const DEFAULTS={
   "site.email":"hello@example.org",
@@ -405,7 +478,7 @@ function renderShell(){
   const s=session();
   $("#adminNav").hidden=false;$("#who").hidden=false;
   $("#who").innerHTML=`<span>${esc(s.email)}</span> <button class="btn btn-outline btn-sm" id="out">Sign out</button> <a class="btn btn-primary btn-sm" href="${CONFIG.publicSiteUrl}" target="_blank" rel="noopener">View site ↗</a>`;
-  $("#out").addEventListener("click",()=>{signOut();boot()});
+  $("#out").addEventListener("click",()=>{signOut();stopInactivityWatch();LS.set("dc_admin_idle_deadline",0);boot()});
   $$("#adminNav a").forEach(a=>{
     a.classList.toggle("on",a.dataset.tab===STATE.tab);
     a.onclick=()=>{STATE.tab=a.dataset.tab;renderShell();renderTab()};
@@ -1079,8 +1152,9 @@ document.addEventListener("input",e=>{
 async function boot(){
   if(!SB.url||!SB.anonKey){renderLogin();return}
   const s=session();
-  if(!s||!s.access_token){renderLogin();return}
+  if(!s||!s.access_token){stopInactivityWatch();renderLogin();return}
   renderShell();
+  startInactivityWatch();
   $("#app").innerHTML=`<div class="loading"><div class="spinner"></div><p>Loading…</p></div>`;
   await loadAll();
   renderShell();
