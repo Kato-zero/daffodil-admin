@@ -1,0 +1,1524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daffodil Care — Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%230e3b2c'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23f7c62f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --leaf:#0e3b2c;--leaf2:#082a1f;--stem:#2b7a57;--sage:#e4eee2;--paper:#f6f6ee;
+  --petal:#f7c62f;--petal2:#fbd95c;--butter:#fdf1c2;
+  --ink:#15221c;--muted:#56655d;--line:#d8e2d6;--danger:#a3332b;--ok:#1f7a4f;
+  --display:"Fraunces",Georgia,serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --shadow:0 24px 60px -28px rgba(14,59,44,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.6 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);font-weight:600;line-height:1.15;margin:0 0 .5em}
+a{color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--petal);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1280px,calc(100% - 40px));margin-inline:auto}
+.topbar{background:var(--leaf);color:#fff;padding:14px 0;position:sticky;top:0;z-index:50;box-shadow:0 4px 20px -10px rgba(0,0,0,.4)}
+.topbar .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:1.15rem;text-decoration:none;color:#fff}
+.topbar .dot{width:28px;height:28px;border-radius:50%;background:var(--petal);display:grid;place-items:center;color:var(--leaf);font-weight:700;font-family:var(--display)}
+.topbar nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.topbar nav a{padding:8px 14px;border-radius:999px;text-decoration:none;font-size:.92rem;font-weight:500;color:#dbe9df}
+.topbar nav a:hover{background:rgba(255,255,255,.12);color:#fff}
+.topbar nav a.on{background:var(--petal);color:#2b2506;font-weight:700}
+.who{display:flex;align-items:center;gap:10px;font-size:.86rem;color:#b8cec2;padding-left:8px;border-left:1px solid rgba(255,255,255,.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;border-radius:999px;border:2px solid transparent;text-decoration:none;font-weight:700;font-size:.95rem;line-height:1.2;transition:transform .15s,background .15s;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn:focus-within{outline:3px solid var(--petal);outline-offset:3px}
+.btn-primary{background:var(--petal);color:#2b2506}
+.btn-primary:hover{background:var(--petal2)}
+.btn-dark{background:var(--leaf);color:#fff}
+.btn-dark:hover{background:var(--stem)}
+.btn-outline{border-color:var(--line);background:#fff;color:var(--ink)}
+.btn-outline:hover{background:var(--sage)}
+.btn-danger{background:transparent;border-color:#ecc8c4;color:var(--danger)}
+.btn-danger:hover{background:#fdecea}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:.82rem}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.page{padding:28px 0 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:20px}
+.card h2{margin-bottom:6px;font-size:1.5rem}
+.card .sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:600;margin-bottom:6px;font-size:.9rem}
+.field input,.field textarea,.field select{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fbfcfa;outline:none;font-size:.95rem;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.field textarea{min-height:120px;resize:vertical;font-family:inherit}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--stem);box-shadow:0 0 0 4px rgba(43,122,87,.14)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:640px){.row,.row-3{grid-template-columns:1fr}}
+.status{font-weight:600;margin:12px 0 0;font-size:.92rem;min-height:1.1em}
+.status.err{color:var(--danger)}
+.status.ok{color:var(--ok)}
+.login{max-width:440px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:24px;padding:34px;box-shadow:var(--shadow)}
+.login h1{font-size:2rem;margin-bottom:6px}
+.login .sub{color:var(--muted);margin:0 0 24px}
+.grid-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.slot{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.slot.uploading{opacity:.5;pointer-events:none}
+.slot .thumb{aspect-ratio:4/3;background:linear-gradient(160deg,var(--stem),var(--leaf)) center/40% no-repeat;position:relative;overflow:hidden}
+.slot .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot .thumb .empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.7);font-size:.82rem;text-align:center;padding:12px;border:0}
+.slot .info{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:6px}
+.slot .info b{font-size:.9rem;font-weight:600;word-break:break-word}
+.slot .info small{color:var(--muted);font-size:.75rem;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.slot .acts{display:flex;gap:6px;padding:0 12px 12px}
+.slot .acts label,.slot .acts button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer;min-height:34px;display:inline-flex;align-items:center;justify-content:center;flex:1}
+.slot .acts label:hover,.slot .acts button:hover{background:var(--sage)}
+.slot .acts input[type=file]{display:none}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:14px;margin:26px 0 14px;flex-wrap:wrap}
+.section-head h3{margin:0;font-size:1.2rem}
+.section-head .hint{color:var(--muted);font-size:.85rem;margin:0}
+.pill{display:inline-block;background:var(--sage);color:var(--leaf);font-weight:600;font-size:.78rem;padding:3px 10px;border-radius:999px}
+.pill.new{background:var(--butter);color:#5b4a06}
+.pill.ok{background:#d8f0e0;color:#1f5a37}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.86rem;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:10px 16px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--leaf);border-bottom-color:var(--leaf)}
+.list-item{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;background:#fbfcfa;display:flex;gap:12px;align-items:flex-start}
+.list-item .grow{flex:1;min-width:0}
+.list-item .grow input,.list-item .grow textarea,.list-item .grow select{margin-bottom:8px}
+.list-item .grow textarea{min-height:70px}
+.list-item .drag{cursor:grab;color:var(--muted);padding-top:6px;font-size:1.1rem;user-select:none}
+.list-item .del{border:0;background:none;color:var(--danger);font-weight:600;padding:6px 4px;font-size:.85rem}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:24px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--leaf);color:#fff;padding:12px 20px;border-radius:999px;z-index:500;opacity:0;pointer-events:none;transition:all .25s;box-shadow:var(--shadow);font-weight:500}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.loading{text-align:center;padding:60px 20px;color:var(--muted)}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--sage);border-top-color:var(--stem);border-radius:50%;animation:sp 0.8s linear infinite;margin-bottom:14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Gallery photo manager */
+.gal-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin:4px 0 10px}
+.gal-photos:empty{display:none}
+.gthumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sage);border:1px solid var(--line)}
+.gthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.gthumb .rm{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(8,42,31,.78);color:#fff;font-size:1.05rem;line-height:1;display:grid;place-items:center;padding:0}
+.gthumb .rm:hover{background:var(--danger)}
+.gal-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gal-status{font-size:.86rem;color:var(--muted);font-weight:600}
+
+/* Expandable sections */
+details>summary{list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details.acc>summary,details.acc-plain>summary,details.item>summary{cursor:pointer;display:flex;align-items:center;gap:12px}
+details.acc>summary::after,details.acc-plain>summary::after,details.item>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 3px auto;flex:none;transition:transform .2s}
+details[open]>summary::after{transform:rotate(-135deg);margin-bottom:-3px}
+details.acc>summary>div{flex:1;min-width:0}
+details.acc>summary h2{margin:0}
+details.acc>summary .sub{margin:2px 0 0}
+.acc-body{margin-top:18px}
+details.acc-plain{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px}
+details.acc-plain>summary h3{margin:0;flex:1}
+.acc-plain .grid-images{margin-top:16px}
+.list-item.item{display:block;padding:0}
+.item>summary{padding:12px 14px}
+.item>summary .item-title{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>summary .del{flex:none}
+.item-body{padding:2px 14px 14px}
+.head-acts{display:flex;gap:8px;flex-wrap:wrap}
+/* Photo upload field */
+.pf-cap{font-weight:600;font-size:.9rem;margin:6px 0 6px}
+.pf{display:flex;gap:12px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
+.pf-thumb{width:96px;height:96px;border-radius:12px;background:var(--sage);border:1px solid var(--line);overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:.78rem;text-align:center;flex:none}
+.pf-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pf-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pf-status{font-size:.86rem;color:var(--muted);font-weight:600}
+
+/* Blog editor */
+[hidden]{display:none!important}
+.fmt{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.fmt button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:5px 11px;font-size:.85rem;font-weight:600;min-height:34px}
+.fmt button:hover{background:var(--sage)}
+.fmt .sp{flex:1}
+.post-body{min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem;line-height:1.6}
+.preview{border:1.5px dashed var(--line);border-radius:14px;padding:18px 20px;background:#fff;margin-bottom:12px}
+.prose{font-size:1.02rem;line-height:1.75}
+.prose h2{font-size:1.5rem;margin:1.2em 0 .4em}
+.prose h3{font-size:1.2rem;margin:1.1em 0 .4em}
+.prose p{margin:0 0 1em}
+.prose ul,.prose ol{margin:0 0 1em;padding-left:1.3em}
+.prose blockquote{margin:1em 0;padding:4px 0 4px 18px;border-left:4px solid var(--petal);font-family:var(--display);font-size:1.15rem;color:var(--leaf)}
+.prose a{color:var(--stem);font-weight:600}
+
+/* Newsletters */
+.pill.bad{background:#fbd9d4;color:#8a2b21}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86em;background:rgba(14,59,44,.07);padding:1px 6px;border-radius:6px}
+.nl-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:8px}
+.nl-stat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+.nl-stat b{display:block;font-family:var(--display);font-size:2rem;line-height:1.1;color:var(--leaf)}
+.nl-stat span{color:var(--muted);font-size:.85rem;font-weight:600}
+.nl-banner{border:1px solid #ecc8c4;background:#fdecea;color:#7a2620;border-radius:14px;padding:14px 18px;margin-bottom:14px;font-size:.92rem}
+.nl-banner.warn{border-color:#eadfa4;background:var(--butter);color:#5b4a06}
+.nl-banner.ok{border-color:#bfe3cc;background:#e8f6ec;color:#1f5a37}
+.nl-list{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.nl-sub{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.nl-sub:last-child{border-bottom:0}
+.nl-who{flex:1;min-width:200px;display:flex;flex-direction:column;word-break:break-all}
+.nl-who small,.nl-date{color:var(--muted);font-size:.8rem}
+.nl-frame{width:100%;height:640px;border:0;border-radius:10px;background:#f6f6ee}
+.nl-meta{margin:0 0 12px;font-size:.88rem;color:var(--muted)}
+.nl-meta b{color:var(--ink)}
+.nl-send{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin-top:8px}
+.nl-send .field{margin:0;flex:1;min-width:220px}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot">D</span> Daffodil Care</a>
+  <nav id="adminNav" hidden>
+    <a href="#images" data-tab="images">Images</a>
+    <a href="#content" data-tab="content">Content</a>
+    <a href="#blog" data-tab="blog">Blog</a>
+    <a href="#vents" data-tab="vents">Vent board</a>
+    <a href="#stories" data-tab="stories">Story replies</a>
+    <a href="#newsletters" data-tab="newsletters">Newsletters</a>
+  </nav>
+  <span class="who" id="who" hidden></span>
+</div></div>
+
+<main class="wrap page" id="app"><div class="loading"><div class="spinner"></div><p>Connecting…</p></div></main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   CONFIG — same Supabase project as the public site
+   ===================================================================== */
+const CONFIG={
+  supabase:{url:"https://bbuzsyzkeksjziaqzcvy.supabase.co",anonKey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJidXpzeXprZWtzanppYXF6Y3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzgwNTcsImV4cCI6MjEwNTQ1NDA1N30.HbqU5OUi6w9fPmkhsCHE-qUGGaLshJ2ZGCpWETHf3F0",bucket:"site-images"},
+  publicSiteUrl:"index.html",
+  newsletterApi:"/api"   // Vercel API routes (newsletter-admin, newsletter-subscribe). Same domain as this page.
+};
+
+/* ---------- session inactivity auto-logout ---------- */
+const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+const INACTIVITY_WARN_MS  = 60 * 1000;     // warn 1 minute before logout
+let inactivityTimer = null;
+let inactivityWarnTimer = null;
+let lastActivityAt = Date.now();
+
+function clearInactivityTimers(){
+  if(inactivityTimer){clearTimeout(inactivityTimer);inactivityTimer=null}
+  if(inactivityWarnTimer){clearTimeout(inactivityWarnTimer);inactivityWarnTimer=null}
+}
+
+function doInactivityLogout(){
+  clearInactivityTimers();
+  LS.set("dc_admin_idle_deadline", 0);
+  signOut();
+  toast("Signed out after 5 minutes of inactivity.");
+  // Wipe any in-memory state so nothing lingers
+  STATE.content={};STATE.images=[];STATE.vents=[];STATE.storyReplies=[];
+  nlReset();
+  renderLogin();
+}
+
+function scheduleInactivityTimers(){
+  clearInactivityTimers();
+  const since = Date.now() - lastActivityAt;
+  const remaining = INACTIVITY_LIMIT_MS - since;
+  if(remaining <= 0){doInactivityLogout();return}
+
+  inactivityTimer = setTimeout(doInactivityLogout, remaining);
+  if(remaining > INACTIVITY_WARN_MS){
+    inactivityWarnTimer = setTimeout(()=>{
+      // Only warn if user is still signed in and still idle
+      if(session() && (Date.now()-lastActivityAt) >= (INACTIVITY_LIMIT_MS - INACTIVITY_WARN_MS)){
+        toast("You'll be signed out in 1 minute due to inactivity.");
+      }
+    }, remaining - INACTIVITY_WARN_MS);
+  }
+}
+
+function registerActivity(){
+  if(!session())return;
+  // Throttle writes: only reset timers if more than 5s since last activity
+  if(Date.now() - lastActivityAt < 5000)return;
+  lastActivityAt = Date.now();
+  LS.set("dc_admin_idle_deadline", lastActivityAt + INACTIVITY_LIMIT_MS);
+  scheduleInactivityTimers();
+}
+
+function startInactivityWatch(){
+  clearInactivityTimers();
+  if(!session())return;
+  // Resume from a previously stored deadline (survives refresh)
+  const storedDeadline = LS.get("dc_admin_idle_deadline", 0);
+  if(storedDeadline && storedDeadline > Date.now()){
+    lastActivityAt = storedDeadline - INACTIVITY_LIMIT_MS;
+  } else {
+    lastActivityAt = Date.now();
+  }
+  LS.set("dc_admin_idle_deadline", lastActivityAt + INACTIVITY_LIMIT_MS);
+  scheduleInactivityTimers();
+  ["mousemove","mousedown","keydown","touchstart","scroll","click","input"].forEach(evt=>{
+    // capture:true so scroll inside nested containers is caught too
+    window.addEventListener(evt, registerActivity, {passive:true, capture:true});
+  });
+}
+
+function stopInactivityWatch(){
+  clearInactivityTimers();
+  ["mousemove","mousedown","keydown","touchstart","scroll","click","input"].forEach(evt=>{
+    window.removeEventListener(evt, registerActivity, {capture:true});
+  });
+}
+
+/* ---------- defaults mirrored from the public site so we can seed Supabase ---------- */
+const DEFAULTS={
+  "site.email":"hello@example.org",
+  "site.phone":"+260 000 000 000",
+  "site.whatsapp":"https://wa.me/260000000000",
+  "site.location":"Lusaka, Zambia",
+  "site.notice":"A safe, welcoming community for teens, young adults, adults and communities across Zambia.",
+  "site.brand_name":"Daffodil Care",
+  "site.footer_blurb":"Bloom. Heal. Shine. Community care, wellness education, mentorship and connection for people from their teenage years and beyond.",
+  "site.social":{Facebook:"https://facebook.com/",Instagram:"https://instagram.com/",TikTok:"https://tiktok.com/",LinkedIn:"https://linkedin.com/"},
+  "home.hero_title":"You are welcome here.",
+  "home.hero_lede":"Daffodil Care is a community organisation creating spaces where teenagers, young adults, adults and communities can connect, learn, grow and support one another.",
+  "home.motto":"Bloom. Heal. Shine.",
+  "home.people_heading":"People first.\nCommunity always.",
+  "home.people_lede":"Our programmes are designed to be welcoming, practical and relevant at different stages of life.",
+  "home.band_heading":"Come to a Chill and Listen.",
+  "home.band_text":"Our community meetup is built around honest conversation and being heard. Come alone or bring a friend. You don't have to say a word to belong.",
+  "home.room_heading":"There is room for you.",
+  "home.room_lede":"Whether you are 15 or 50+, a student, professional, volunteer, parent, mentor or simply someone looking for community, our activities can meet you where you are.",
+  "home.involved_heading":"Don't just attend. Help build the community.",
+  "home.involved_lede":"Volunteer at events, become a partner, share your skills, support a programme or help us reach people who may benefit from community care.",
+  "site.stats":[
+    {n:539,suffix:"+",label:"Chill and Listen attendees"},
+    {n:295,suffix:"",label:"Community members"},
+    {n:2000,suffix:"+",label:"Followers online"},
+    {n:2021,suffix:"",label:"Where the community began",plain:true}
+  ],
+  programs:[
+    {icon:"users",name:"Healing Circles",short:"Small, welcoming circles where people can talk, listen and feel heard.",body:"Facilitated community conversations for people carrying stress, grief, loneliness, pressure or major life changes.",points:["Respectful community ground rules","Facilitated so different voices can be heard","Open to teens, young adults and adults"]},
+    {icon:"book",name:"Wellness Education",short:"Practical conversations about wellbeing, life skills and healthy communities.",body:"Interactive sessions that make wellness easier to understand and apply in everyday life.",points:["Mental and emotional wellbeing","Healthy routines, movement and nutrition","Finding appropriate professional support"]},
+    {icon:"compass",name:"Youth & Young Adult Mentorship",short:"Guidance, encouragement and practical support while growing into adulthood.",body:"Mentorship for teenagers and young adults navigating school, careers, relationships, confidence and personal goals.",points:["Goal setting and life skills","Education and career conversations","Positive role models and peer connection"]},
+    {icon:"heart",name:"Community Outreach",short:"We take care, education and connection beyond our regular meeting spaces.",body:"Outreach can include schools, universities, children's homes, community groups and other settings.",points:["School and campus activities","Community visits","Partnership-based outreach"]},
+    {icon:"cap",name:"Campus Wellness Clubs",short:"Student-led spaces where students can connect, learn and support one another.",body:"Our campus clubs create a consistent community around wellbeing, volunteering, events and peer support.",points:["Student-led activities","Healing Circles and workshops","Community service and outreach"]},
+    {icon:"brief",name:"Workplace & Community Wellness",short:"Practical sessions for organisations that want healthier, kinder communities.",body:"We work with organisations and teams on communication, stress awareness, wellbeing and supportive environments.",points:["Workplace sessions","Community workshops","Custom partnership programmes"]}
+  ],
+  events:[
+    {date:"Next meetup",title:"Date to be announced",venue:"Lusaka, Zambia",text:"Follow our socials or send us a message and we'll tell you as soon as the next Chill and Listen is set."},
+    {date:"29 May 2026",title:"Chill and Listen — Community Meetup",venue:"Lusaka, Zambia",text:"A community gathering built around honest conversation, connection and listening."},
+    {date:"Community outreach",title:"Wellness & Community Day",venue:"Zambia",text:"An outreach day bringing practical wellness education and community connection."}
+  ],
+  gallery:[
+    {title:"Chill and Listen: Community Meetup",date:"29 May 2026",about:"A community gathering built around honest conversation, connection and listening.",photos:[]},
+    {title:"Campus Wellness Club Day",date:"March 2026",about:"Students connecting, learning and supporting each other.",photos:[]},
+    {title:"Wellness & Community Day",date:"December 2025",about:"An outreach day bringing practical wellness education to the community.",photos:[]}
+  ],
+  team:[
+    {name:"Full Name",role:"Founder & Director",photo:""},
+    {name:"Full Name",role:"Programmes Lead",photo:""},
+    {name:"Full Name",role:"Community Outreach Lead",photo:""},
+    {name:"Full Name",role:"Communications Lead",photo:""}
+  ],
+  stories:[
+    {id:"how-daffodil-care-began",title:"How Daffodil Care began",date:"12 Sep 2026",tag:"Our story",cover:"",body:["Daffodil Care began as a student-led idea: that wellbeing is something communities can practise together, and that people should not have to carry difficult seasons alone.","What grew from those early gatherings is what you see today: Healing Circles, wellness education, mentorship, outreach and campus clubs.","We are still learning. We are still listening. And there is still room for you."]},
+    {id:"what-happens-in-a-healing-circle",title:"What happens in a Healing Circle?",date:"28 Aug 2026",tag:"Programme",cover:"",body:["A first circle can feel unfamiliar. There is no agenda, no performance, no pressure to share.","The group follows agreed ground rules around respect and confidentiality. No advice is forced on anyone.","Some people come to speak. Many come just to listen. Both are welcome."]},
+    {id:"small-conversations-make-a-difference",title:"Small conversations can make a difference",date:"14 Aug 2026",tag:"Community",cover:"",body:["Sometimes support starts with a simple question, a genuine listen and making space for another person.","You do not need to have the answers. Often the most helpful thing is to stay.","Small conversations, repeated over time, are how communities become places where people can heal."]}
+  ],
+  blog:[
+    {id:"welcome-to-the-daffodil-care-blog",title:"Welcome to the Daffodil Care blog",date:"2026-09-20",category:"Announcements",author:"Daffodil Care",cover:"",draft:false,
+     excerpt:"A new space for honest writing about mental health, wellbeing and community care.",
+     body:"This is our new home for writing about mental health and wellbeing, in plain language and with our community in mind.\n\n## What you'll find here\n\n- Practical guides you can use in everyday life\n- Reflections from our Healing Circles and meetups\n- Ways to support a friend, a family member or yourself\n\nEverything we publish is for information and encouragement. It is not a replacement for professional care.\n\nIf something here stays with you, you are welcome to talk to us or share how you feel anonymously on our Vent here page."}
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+let toastT;function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600)}
+
+/* ---------- Supabase REST helpers (auth-aware) ---------- */
+const SB=CONFIG.supabase;
+const baseUrl=()=>SB.url.replace(/\/$/,"");
+const session=()=>LS.get("dc_admin",null);
+const setSession=s=>LS.set("dc_admin",s);
+function authHeaders(){
+  const s=session();
+  const h={apikey:SB.anonKey,"Content-Type":"application/json"};
+  if(s&&s.access_token)h.Authorization="Bearer "+s.access_token;
+  else h.Authorization="Bearer "+SB.anonKey;
+  return h;
+}
+async function sb(path,{method="GET",body,headers={}}={}){
+  const r=await fetch(baseUrl()+"/rest/v1/"+path,{method,headers:{...authHeaders(),...headers},body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+
+/* ---------- auth ---------- */
+async function signIn(email,password){
+  const r=await fetch(baseUrl()+"/auth/v1/token?grant_type=password",{
+    method:"POST",headers:{"Content-Type":"application/json",apikey:SB.anonKey},
+    body:JSON.stringify({email,password})
+  });
+  if(!r.ok)throw new Error("Invalid email or password");
+  const data=await r.json();
+  setSession({email,access_token:data.access_token,refresh_token:data.refresh_token,expires_at:Date.now()+data.expires_in*1000});
+  return data;
+}
+function signOut(){LS.set("dc_admin",null)}
+
+/* ---------- state ---------- */
+const STATE={
+  content:{},          // key -> value
+  images:[],           // [{key,url}]
+  vents:[],            // for admin view
+  storyReplies:[],     // for admin view
+  nl:nlFresh(),        // newsletters (loaded when the tab is first opened)
+  tab:"images",
+  open:{},
+  loading:false
+};
+const DEFAULT_IMAGE_KEYS=[
+  {key:"logo",label:"Site logo",group:"Brand"},
+  {key:"photos.hero",label:"Home hero",group:"Home"},
+  {key:"photos.meetup1",label:"Meetup 1",group:"Home"},
+  {key:"photos.meetup2",label:"Meetup 2",group:"Home"},
+  {key:"photos.meetup3",label:"Meetup 3",group:"Home"},
+  {key:"photos.meetup4",label:"Meetup 4",group:"Home"},
+  {key:"photos.meetup5",label:"Meetup 5",group:"Home"},
+  {key:"photos.outreach",label:"Community outreach",group:"Home"},
+  {key:"photos.mentorship",label:"Mentorship",group:"Home"}
+];
+
+/* ---------- data load ---------- */
+async function loadAll(){
+  STATE.loading=true;
+  try{
+    const [c,i,v,sr]=await Promise.all([
+      sb("site_content?select=key,value"),
+      sb("site_images?select=key,url,updated_at"),
+      sb("vents?select=id,created_at,handle,mood,body,hidden,reports,replies:vent_replies(count)&order=created_at.desc&limit=200").catch(()=>[]),
+      sb("story_replies?select=id,story_id,created_at,handle,body&order=created_at.desc&limit=500").catch(()=>[])
+    ]);
+    STATE.content={};c.forEach(r=>{STATE.content[r.key]=r.value});
+    STATE.images=i;
+    STATE.vents=v||[];
+    STATE.storyReplies=sr||[];
+  }catch(e){console.error(e);toast("Couldn't load: "+(e.message||e))}
+  STATE.loading=false;
+}
+
+/* ---------- content write ---------- */
+async function upsertContent(key,value){
+  await sb("site_content?on_conflict=key",{method:"POST",
+    headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+    body:[{key,value,updated_at:new Date().toISOString()}]});
+  STATE.content[key]=value;
+}
+async function deleteContent(key){
+  await sb(`site_content?key=eq.${encodeURIComponent(key)}`,{method:"DELETE"});
+  delete STATE.content[key];
+}
+
+/* ---------- image upload ---------- */
+/* Uploads one file to the storage bucket and returns its public URL. */
+async function uploadFile(prefix,file){
+  const s=session();if(!s)throw new Error("Not signed in");
+  if(file.size>50*1024*1024)throw new Error("Image is too large (max 50 MB)");
+  const ext=((file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,""))||"jpg";
+  const path=`${prefix}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
+  const up=await fetch(`${baseUrl()}/storage/v1/object/${SB.bucket}/${path}`,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+s.access_token,apikey:SB.anonKey,"Content-Type":file.type||"image/jpeg","x-upsert":"true"},
+    body:file
+  });
+  if(!up.ok)throw new Error(await up.text());
+  return `${baseUrl()}/storage/v1/object/public/${SB.bucket}/${path}`;
+}
+async function uploadImage(key,file){
+  const safe=key.replace(/[^a-z0-9._-]/gi,"_");
+  const url=await uploadFile(safe,file);
+  await sb("site_images?on_conflict=key",{method:"POST",
+    headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+    body:[{key,url,updated_at:new Date().toISOString()}]});
+  const existing=STATE.images.find(x=>x.key===key);
+  if(existing)existing.url=url;else STATE.images.push({key,url});
+  return url;
+}
+async function removeImage(key){
+  await sb(`site_images?key=eq.${encodeURIComponent(key)}`,{method:"DELETE"});
+  STATE.images=STATE.images.filter(x=>x.key!==key);
+}
+
+/* ---------- image slots ----------
+   Team, story, event and gallery photos are uploaded inside their own sections on the Content tab.
+   Only the site-wide images live here. */
+function imageSlots(){
+  return [...DEFAULT_IMAGE_KEYS];
+}
+function imageUrlFor(key){const r=STATE.images.find(x=>x.key===key);return r?r.url:""}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function renderLogin(){
+  $("#adminNav").hidden=true;$("#who").hidden=true;
+  $("#app").innerHTML=`<div class="login">
+    <h1>Admin sign in</h1>
+    <p class="sub">Sign in with your Supabase admin account.</p>
+    <form id="loginForm">
+      <div class="field"><label for="em">Email</label><input id="em" type="email" name="email" required autocomplete="email"></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" name="password" required autocomplete="current-password"></div>
+      <button class="btn btn-dark" style="width:100%">Sign in</button>
+      <p class="status" id="loginStatus"></p>
+    </form>
+    ${SB.url?"":`<div class="status err" style="margin-top:16px">Supabase URL is not configured. Add it to CONFIG.supabase in admin.html.</div>`}
+  </div>`;
+  $("#loginForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const st=$("#loginStatus"),btn=$("button",e.target);
+    st.textContent="Signing in…";st.className="status";
+    btn.disabled=true;
+    try{await signIn(e.target.email.value.trim(),e.target.password.value);await boot()}
+    catch(err){st.textContent=err.message||"Sign in failed";st.className="status err";btn.disabled=false}
+  });
+}
+
+function renderShell(){
+  const s=session();
+  $("#adminNav").hidden=false;$("#who").hidden=false;
+  $("#who").innerHTML=`<span>${esc(s.email)}</span> <button class="btn btn-outline btn-sm" id="out">Sign out</button> <a class="btn btn-primary btn-sm" href="${CONFIG.publicSiteUrl}" target="_blank" rel="noopener">View site ↗</a>`;
+  $("#out").addEventListener("click",()=>{signOut();stopInactivityWatch();LS.set("dc_admin_idle_deadline",0);nlReset();boot()});
+  $$("#adminNav a").forEach(a=>{
+    a.classList.toggle("on",a.dataset.tab===STATE.tab);
+    a.onclick=()=>{STATE.tab=a.dataset.tab;renderShell();renderTab()};
+  });
+}
+function renderTab(){
+  if(STATE.tab==="images")return renderImages();
+  if(STATE.tab==="content")return renderContent();
+  if(STATE.tab==="blog")return renderBlog();
+  if(STATE.tab==="vents")return renderVents();
+  if(STATE.tab==="stories")return renderStories();
+  if(STATE.tab==="newsletters")return renderNewsletters();
+}
+
+/* ---------- IMAGES TAB ---------- */
+function renderImages(){
+  const slots=imageSlots();
+  const groups=[...new Set(slots.map(s=>s.group))];
+  const missing=slots.filter(s=>!imageUrlFor(s.key)).length;
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Images</h2><p class="hint">Upload or replace site-wide images. Changes appear instantly. Team, story, event and gallery photos are uploaded inside their sections on the Content tab.</p></div>
+    <div class="head-acts"><span class="pill">${slots.length} slots</span> ${missing?`<span class="pill new">${missing} missing</span>`:'<span class="pill ok">All set</span>'}
+    <button class="btn btn-outline btn-sm" data-expand="all">Expand all</button><button class="btn btn-outline btn-sm" data-expand="none">Collapse all</button></div></div>
+    ${groups.map(g=>{
+      const list=slots.filter(s=>s.group===g),miss=list.filter(s=>!imageUrlFor(s.key)).length,id="img-"+g;
+      return `<details class="acc-plain" data-acc="${esc(id)}" ${STATE.open[id]?"open":""}><summary><h3>${esc(g)}</h3><span class="pill">${list.length} slot${list.length>1?"s":""}</span>${miss?`<span class="pill new">${miss} missing</span>`:""}</summary>
+      <div class="grid-images">${list.map(slotCard).join("")}</div></details>`}).join("")}
+  `;
+  $$("[data-upload]").forEach(inp=>{
+    inp.addEventListener("change",async e=>{
+      const key=e.target.dataset.upload,file=e.target.files[0];
+      if(!file)return;
+      const slot=e.target.closest(".slot");slot.classList.add("uploading");
+      try{await uploadImage(key,file);toast("Uploaded");renderImages()}
+      catch(err){toast("Upload failed: "+(err.message||err));slot.classList.remove("uploading")}
+    });
+  });
+  $$("[data-remove]").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      if(!confirm("Remove this image? The public site will fall back to any default."))return;
+      try{await removeImage(btn.dataset.remove);toast("Removed");renderImages()}
+      catch(err){toast("Couldn't remove: "+(err.message||err))}
+    });
+  });
+}
+function slotCard(s){
+  const url=imageUrlFor(s.key);
+  return `<div class="slot" data-slot="${esc(s.key)}">
+    <div class="thumb">${url?`<img src="${esc(url)}" alt="${esc(s.label)}" referrerpolicy="no-referrer">`:`<div class="empty">No image yet</div>`}</div>
+    <div class="info"><b>${esc(s.label)}</b><small>${esc(s.key)}</small></div>
+    <div class="acts">
+      <label>${url?"Replace":"Upload"}<input type="file" accept="image/*" data-upload="${esc(s.key)}"></label>
+      ${url?`<button data-remove="${esc(s.key)}">Reset</button>`:""}
+    </div>
+  </div>`;
+}
+
+/* ---------- CONTENT TAB ---------- */
+function acc(id,title,sub,body){
+  return `<details class="card acc" data-acc="${id}" ${STATE.open[id]?"open":""}><summary><div><h2>${title}</h2><p class="sub">${sub}</p></div></summary><div class="acc-body">${body}</div></details>`;
+}
+function renderContent(){
+  const c=STATE.content;
+  const get=(k)=>c[k]!==undefined?c[k]:DEFAULTS[k];
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Content</h2><p class="hint">Tap a section to open it. Save each block to push changes live.</p></div>
+    <div class="head-acts"><button class="btn btn-outline btn-sm" data-expand="all">Expand all</button><button class="btn btn-outline btn-sm" data-expand="none">Collapse all</button><button class="btn btn-outline btn-sm" id="seedDefaults">Seed missing defaults</button></div></div>
+
+    ${acc("identity","Contact &amp; identity","Shown in the footer and on the Contact page.",`
+      ${textField("site.email","Email","email")}
+      ${textField("site.phone","Phone")}
+      ${textField("site.whatsapp","WhatsApp URL")}
+      ${textField("site.location","Location")}
+      ${textField("site.brand_name","Brand name")}
+      ${textField("site.notice","Top notice bar")}
+      ${textArea("site.footer_blurb","Footer blurb")}
+      <button class="btn btn-dark btn-sm" data-save-block="identity">Save</button>
+      <p class="status" id="st-identity"></p>`)}
+
+    ${acc("social","Social links","Links in the footer.",`
+      ${["Facebook","Instagram","TikTok","LinkedIn"].map(k=>`<div class="field"><label for="social-${k}">${k}</label><input id="social-${k}" name="social-${k}" value="${esc((get("site.social")||{})[k]||"")}"></div>`).join("")}
+      <button class="btn btn-dark btn-sm" data-save-block="social">Save</button>
+      <p class="status" id="st-social"></p>`)}
+
+    ${acc("home","Home page text","Headings and intro text on the home page.",`
+      ${textArea("home.hero_title","Hero title")}
+      ${textArea("home.hero_lede","Hero lede")}
+      ${textField("home.motto","Motto")}
+      ${textArea("home.people_heading","Section heading — People first")}
+      ${textArea("home.people_lede","Section lede — People first")}
+      ${textField("home.band_heading","Band heading")}
+      ${textArea("home.band_text","Band text")}
+      ${textField("home.room_heading","Room heading")}
+      ${textArea("home.room_lede","Room lede")}
+      ${textField("home.involved_heading","Involved heading")}
+      ${textArea("home.involved_lede","Involved lede")}
+      <button class="btn btn-dark btn-sm" data-save-block="home">Save</button>
+      <p class="status" id="st-home"></p>`)}
+
+    ${acc("stats","Stats","Four numbers on the home page.",`
+      <div id="statsList">${(get("site.stats")||[]).map(statRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addStat">+ Add stat</button>
+      <button class="btn btn-dark btn-sm" data-save-block="stats" style="margin-left:8px">Save</button>
+      <p class="status" id="st-stats"></p>`)}
+
+    ${acc("programs","Programmes","Six programme cards on Home and the Our work page.",`
+      <div id="programsList">${(get("programs")||[]).map(programRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addProgram">+ Add programme</button>
+      <button class="btn btn-dark btn-sm" data-save-block="programs" style="margin-left:8px">Save</button>
+      <p class="status" id="st-programs"></p>`)}
+
+    ${acc("events","Events","Shown on the Stories &amp; events page. Upload each event's photo here; it goes live straight away.",`
+      <div id="eventsList">${(get("events")||[]).map(eventRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addEvent">+ Add event</button>
+      <button class="btn btn-dark btn-sm" data-save-block="events" style="margin-left:8px">Save</button>
+      <p class="status" id="st-events"></p>`)}
+
+    ${acc("gallery","Gallery","Each gallery event shows on the Gallery page. Upload a cover and photos, then press Save.",`
+      <div id="galleryList">${(get("gallery")||[]).map(galleryRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addGallery">+ Add gallery event</button>
+      <button class="btn btn-dark btn-sm" data-save-block="gallery" style="margin-left:8px">Save</button>
+      <p class="status" id="st-gallery"></p>`)}
+
+    ${acc("team","Team","Upload a photo for each team member, then press Save.",`
+      <div id="teamList">${(get("team")||[]).map(teamRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addTeam">+ Add member</button>
+      <button class="btn btn-dark btn-sm" data-save-block="team" style="margin-left:8px">Save</button>
+      <p class="status" id="st-team"></p>`)}
+
+    ${acc("stories","Stories","Blog-style posts on the Stories page. Upload a cover image for each, then press Save. Replies are in the Story replies tab.",`
+      <div id="storiesList">${(get("stories")||[]).map(storyRow).join("")}</div>
+      <button class="btn btn-outline btn-sm" id="addStory">+ Add story</button>
+      <button class="btn btn-dark btn-sm" data-save-block="stories" style="margin-left:8px">Save</button>
+      <p class="status" id="st-stories"></p>`)}
+  `;
+  wireContentSaves();
+  $("#seedDefaults").addEventListener("click",seedMissingDefaults);
+}
+function textField(key,label,type){
+  const v=STATE.content[key]!==undefined?STATE.content[key]:DEFAULTS[key];
+  return `<div class="field"><label for="c-${key}">${esc(label)}</label><input id="c-${key}" data-content="${key}" type="${type||"text"}" value="${esc(v||"")}"></div>`;
+}
+function textArea(key,label){
+  const v=STATE.content[key]!==undefined?STATE.content[key]:DEFAULTS[key];
+  return `<div class="field"><label for="c-${key}">${esc(label)}</label><textarea id="c-${key}" data-content="${key}">${esc(v||"")}</textarea></div>`;
+}
+function statRow(s={},i){
+  return `<div class="list-item" data-stat>
+    <div class="grow">
+      <div class="row-3">
+        <input data-f="n" value="${esc(s.n||"")}" placeholder="Number">
+        <input data-f="suffix" value="${esc(s.suffix||"")}" placeholder="Suffix (+)">
+        <input data-f="plain" type="checkbox" ${s.plain?"checked":""} style="width:auto"> Plain
+      </div>
+      <input data-f="label" value="${esc(s.label||"")}" placeholder="Label">
+    </div>
+    <button class="del" type="button" data-del>Remove</button>
+  </div>`;
+}
+
+/* Expandable list item: title row (with Remove) + body */
+function itemShell(attr,title,fallback,body){
+  return `<details class="list-item item" ${attr}><summary><span class="item-title" data-title data-fallback="${esc(fallback)}">${esc(title||fallback)}</span><button class="del" type="button" data-del>Remove</button></summary><div class="item-body grow">${body}</div></details>`;
+}
+
+/* Photo upload field. Either stores its URL in the row (Save publishes it),
+   or, with a slot, uploads straight to a site image slot (goes live immediately). */
+function pfInner(url){
+  return `<div class="pf-thumb">${url?`<img src="${esc(url)}" alt="" referrerpolicy="no-referrer">`:`<span>No photo</span>`}</div>
+  <div class="pf-acts"><label class="btn btn-outline btn-sm">${url?"Replace photo":"Upload photo"}<input class="vh" type="file" accept="image/*" data-pf-upload></label>${url?`<button type="button" class="btn btn-danger btn-sm" data-pf-clear>Remove</button>`:""}<span class="pf-status" role="status" aria-live="polite"></span></div>`;
+}
+function photoField(url,opts={}){
+  const attrs=opts.slot?`data-slot="${opts.slot}"`:`data-prefix="${esc(opts.prefix||"misc")}"`;
+  return `<div class="pf" data-photo ${attrs} data-url="${esc(url||"")}">${pfInner(url)}</div>`;
+}
+function setPhoto(box,url){box.dataset.url=url||"";box.innerHTML=pfInner(url)}
+function photoUrl(row){const b=row.querySelector("[data-photo]");return b?(b.dataset.url||""):""}
+function slotKeyFor(box){
+  if(box.dataset.slot==="gallery-cover"){const rows=$$("#galleryList [data-gallery]");return `gallery.${rows.indexOf(box.closest("[data-gallery]"))}.cover`}
+  if(box.dataset.slot==="event"){const rows=$$("#eventsList [data-event]");return `photos.event.${rows.indexOf(box.closest("[data-event]"))}`}
+  return "";
+}
+
+function programRow(p={},i){
+  return itemShell("data-program",p.name,"New programme",`
+    <div class="row">
+      <input data-f="icon" value="${esc(p.icon||"heart")}" placeholder="Icon (users/book/compass/heart/cap/brief)">
+      <input data-f="name" value="${esc(p.name||"")}" placeholder="Name">
+    </div>
+    <input data-f="short" value="${esc(p.short||"")}" placeholder="Short description">
+    <textarea data-f="body" placeholder="Full description">${esc(p.body||"")}</textarea>
+    <textarea data-f="points" placeholder="One point per line">${esc((p.points||[]).join("\n"))}</textarea>`);
+}
+function eventRow(e={},i){
+  return itemShell("data-event",e.title,"New event",`
+    <div class="row">
+      <input data-f="date" value="${esc(e.date||"")}" placeholder="Date label">
+      <input data-f="venue" value="${esc(e.venue||"")}" placeholder="Venue">
+    </div>
+    <input data-f="title" value="${esc(e.title||"")}" placeholder="Event title">
+    <textarea data-f="text" placeholder="Description">${esc(e.text||"")}</textarea>
+    <div class="pf-cap">Event photo</div>
+    ${photoField(imageUrlFor(`photos.event.${i}`),{slot:"event"})}`);
+}
+function galleryThumb(url){
+  return `<div class="gthumb" data-url="${esc(url)}"><img src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><button type="button" class="rm" data-rm-photo aria-label="Remove photo">×</button></div>`;
+}
+function galleryRow(g={},i){
+  const photos=(g.photos||[]).map(p=>typeof p==="string"?p:(p&&p.src)||"").filter(Boolean);
+  return itemShell("data-gallery",g.title,"New gallery event",`
+    <div class="row">
+      <input data-f="title" value="${esc(g.title||"")}" placeholder="Event title">
+      <input data-f="date" value="${esc(g.date||"")}" placeholder="Date label">
+    </div>
+    <textarea data-f="about" placeholder="Short description">${esc(g.about||"")}</textarea>
+    <div class="pf-cap">Cover image (goes live straight away)</div>
+    ${photoField(imageUrlFor(`gallery.${i}.cover`),{slot:"gallery-cover"})}
+    <div class="pf-cap">Photos</div>
+    <div class="gal-photos">${photos.map(galleryThumb).join("")}</div>
+    <div class="gal-bar">
+      <label class="btn btn-outline btn-sm">+ Add photos<input class="vh" type="file" accept="image/*" multiple data-gal-upload></label>
+      <span class="gal-status" role="status" aria-live="polite"></span>
+    </div>`);
+}
+async function addGalleryPhotos(row,files){
+  const box=$(".gal-photos",row),st=$(".gal-status",row);
+  row.dataset.busy="1";
+  let done=0,fail=0;
+  for(const f of files){
+    st.textContent=`Uploading ${done+fail+1} of ${files.length}…`;
+    try{const url=await uploadFile("gallery",f);box.insertAdjacentHTML("beforeend",galleryThumb(url));done++}
+    catch(e){fail++;toast("Upload failed: "+(e.message||e))}
+  }
+  delete row.dataset.busy;
+  st.textContent=done?`${done} photo${done>1?"s":""} added. Press Save to publish.`:"";
+}
+function teamRow(m={},i){
+  return itemShell("data-team",m.name,"New team member",`
+    <div class="row">
+      <input data-f="name" value="${esc(m.name||"")}" placeholder="Name">
+      <input data-f="role" value="${esc(m.role||"")}" placeholder="Role">
+    </div>
+    <div class="pf-cap">Photo</div>
+    ${photoField(m.photo||imageUrlFor(`team.${i}.photo`),{prefix:"team"})}`);
+}
+function storyRow(s={},i){
+  return itemShell("data-story",s.title,"New story",`
+    <div class="row-3">
+      <input data-f="id" value="${esc(s.id||"")}" placeholder="Slug (unique)">
+      <input data-f="date" value="${esc(s.date||"")}" placeholder="Date">
+      <input data-f="tag" value="${esc(s.tag||"")}" placeholder="Tag">
+    </div>
+    <input data-f="title" value="${esc(s.title||"")}" placeholder="Title">
+    <div class="pf-cap">Cover image</div>
+    ${photoField(s.cover||imageUrlFor(`stories.${i}.cover`),{prefix:"stories"})}
+    <textarea data-f="body" placeholder="Body — separate paragraphs with a blank line">${esc((s.body||[]).join("\n\n"))}</textarea>`);
+}
+
+/* collect rows back into arrays */
+function collectRows(containerSel,rowSel,fieldsFn){
+  const out=[];
+  $$(containerSel+" "+rowSel).forEach(row=>{
+    const o=fieldsFn(row);
+    if(o)out.push(o);
+  });
+  return out;
+}
+function wireContentSaves(){
+  // add buttons
+  const add=(id,listSel,tpl)=>{const b=$(id);if(!b)return;b.addEventListener("click",()=>{
+    const list=$(listSel);const tmp=document.createElement("div");tmp.innerHTML=tpl({},list.children.length);
+    const el=tmp.firstElementChild;if(el.tagName==="DETAILS")el.open=true;
+    list.appendChild(el);wireDeletes();
+  })};
+  add("#addStat","#statsList",statRow);
+  add("#addProgram","#programsList",programRow);
+  add("#addEvent","#eventsList",eventRow);
+  add("#addGallery","#galleryList",galleryRow);
+  add("#addTeam","#teamList",teamRow);
+  add("#addStory","#storiesList",storyRow);
+  wireDeletes();
+  // gallery photo uploads / removals (delegated so newly added gallery events work too)
+  const gl=$("#galleryList");
+  if(gl){
+    gl.addEventListener("change",e=>{
+      const inp=e.target.closest("[data-gal-upload]");
+      if(!inp||!inp.files.length)return;
+      const row=inp.closest("[data-gallery]"),files=[...inp.files];
+      inp.value="";
+      addGalleryPhotos(row,files);
+    });
+    gl.addEventListener("click",e=>{
+      const b=e.target.closest("[data-rm-photo]");
+      if(b)b.closest(".gthumb").remove();
+    });
+  }
+  $$("[data-save-block]").forEach(b=>b.addEventListener("click",()=>saveBlock(b.dataset.saveBlock)));
+}
+function wireDeletes(){
+  $$("[data-del]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();b.closest(".list-item").remove()});
+}
+async function saveBlock(block){
+  const st=$("#st-"+block);
+  const set=(t,c)=>{if(st){st.textContent=t;st.className="status "+c}};
+  const listSel={gallery:"#galleryList",team:"#teamList",stories:"#storiesList",events:"#eventsList"}[block];
+  if(listSel&&$(listSel+" [data-busy]")){set("Photos are still uploading. Try again in a moment.","err");return}
+  set("Saving…","");
+  try{
+    if(block==="identity"){
+      const keys=["site.email","site.phone","site.whatsapp","site.location","site.brand_name","site.notice","site.footer_blurb"];
+      for(const k of keys){
+        const el=$(`[data-content="${k}"]`);
+        if(el)await upsertContent(k,el.value);
+      }
+    }
+    if(block==="social"){
+      const social={};
+      ["Facebook","Instagram","TikTok","LinkedIn"].forEach(k=>{
+        const el=$("#social-"+k);if(el&&el.value.trim())social[k]=el.value.trim();
+      });
+      await upsertContent("site.social",social);
+    }
+    if(block==="home"){
+      const keys=["home.hero_title","home.hero_lede","home.motto","home.people_heading","home.people_lede","home.band_heading","home.band_text","home.room_heading","home.room_lede","home.involved_heading","home.involved_lede"];
+      for(const k of keys){
+        const el=$(`[data-content="${k}"]`);
+        if(el)await upsertContent(k,el.value);
+      }
+    }
+    if(block==="stats"){
+      const stats=collectRows("#statsList","[data-stat]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const n=parseInt(g("n").value,10);
+        if(!n&&n!==0)return null;
+        return {n:n||0,suffix:g("suffix").value.trim(),label:g("label").value.trim(),plain:g("plain").checked||undefined};
+      });
+      await upsertContent("site.stats",stats);
+    }
+    if(block==="programs"){
+      const programs=collectRows("#programsList","[data-program]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const name=g("name").value.trim();
+        if(!name)return null;
+        return {icon:g("icon").value.trim()||"heart",name,short:g("short").value.trim(),body:g("body").value.trim(),points:g("points").value.split("\n").map(x=>x.trim()).filter(Boolean)};
+      });
+      await upsertContent("programs",programs);
+    }
+    if(block==="events"){
+      const events=collectRows("#eventsList","[data-event]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const title=g("title").value.trim();
+        if(!title)return null;
+        return {date:g("date").value.trim(),title,venue:g("venue").value.trim(),text:g("text").value.trim()};
+      });
+      await upsertContent("events",events);
+    }
+    if(block==="gallery"){
+      const gallery=collectRows("#galleryList","[data-gallery]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const title=g("title").value.trim();
+        if(!title)return null;
+        const photos=$$(".gthumb",row).map(t=>t.dataset.url).filter(Boolean);
+        return {title,date:g("date").value.trim(),about:g("about").value.trim(),photos};
+      });
+      await upsertContent("gallery",gallery);
+    }
+    if(block==="team"){
+      const team=collectRows("#teamList","[data-team]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const name=g("name").value.trim();
+        if(!name)return null;
+        return {name,role:g("role").value.trim(),photo:photoUrl(row)};
+      });
+      await upsertContent("team",team);
+    }
+    if(block==="stories"){
+      const stories=collectRows("#storiesList","[data-story]",row=>{
+        const g=f=>row.querySelector(`[data-f="${f}"]`);
+        const id=g("id").value.trim(),title=g("title").value.trim();
+        if(!id||!title)return null;
+        const body=g("body").value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);
+        return {id,title,date:g("date").value.trim(),tag:g("tag").value.trim(),cover:photoUrl(row),body};
+      });
+      await upsertContent("stories",stories);
+    }
+    set("Saved.","ok");
+    toast("Saved");
+  }catch(e){set("Error: "+(e.message||e),"err")}
+}
+async function seedMissingDefaults(){
+  if(!confirm("Write defaults into Supabase for any keys that are missing? Existing rows are left alone."))return;
+  try{
+    const toWrite=[];
+    for(const [k,v] of Object.entries(DEFAULTS)){
+      if(STATE.content[k]===undefined)toWrite.push({key:k,value:v,updated_at:new Date().toISOString()});
+    }
+    if(!toWrite.length){toast("Nothing to seed");return}
+    await sb("site_content?on_conflict=key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:toWrite});
+    await loadAll();
+    renderContent();
+    toast("Seeded "+toWrite.length+" keys");
+  }catch(e){toast("Seed failed: "+(e.message||e))}
+}
+
+/* ---------- VENTS TAB ---------- */
+function renderVents(){
+  const rows=STATE.vents||[];
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Vent board</h2><p class="hint">Moderate anonymous posts. Hidden posts are excluded from the public site.</p></div>
+    <span class="pill">${rows.length} posts</span></div>
+    ${rows.length?rows.map(v=>`
+      <div class="list-item" data-vent="${esc(v.id)}">
+        <div class="grow">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <strong>${esc(v.handle)}</strong>
+            <span class="pill">${esc(v.mood||"—")}</span>
+            <small style="color:var(--muted)">${new Date(v.created_at).toLocaleString()}</small>
+            ${v.hidden?'<span class="pill" style="background:#fbd9d4;color:#8a2b21">Hidden</span>':""}
+            ${v.reports?`<span class="pill new">${v.reports} reports</span>`:""}
+          </div>
+          <p style="margin:0;white-space:pre-wrap">${esc(v.body)}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-outline btn-sm" data-hide="${esc(v.id)}" data-state="${v.hidden?"false":"true"}">${v.hidden?"Unhide":"Hide"}</button>
+          <button class="btn btn-danger btn-sm" data-delete="${esc(v.id)}">Delete</button>
+        </div>
+      </div>`).join(""):`<div class="empty">No posts yet.</div>`}
+  `;
+  $$("[data-hide]").forEach(b=>b.addEventListener("click",async()=>{
+    const hidden=b.dataset.state==="true";
+    try{await sb(`vents?id=eq.${encodeURIComponent(b.dataset.hide)}`,{method:"PATCH",body:{hidden}});
+      const v=STATE.vents.find(x=>x.id===b.dataset.hide);if(v)v.hidden=hidden;renderVents();toast(hidden?"Hidden":"Unhidden")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+  $$("[data-delete]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Delete this post permanently?"))return;
+    try{await sb(`vents?id=eq.${encodeURIComponent(b.dataset.delete)}`,{method:"DELETE"});
+      STATE.vents=STATE.vents.filter(x=>x.id!==b.dataset.delete);renderVents();toast("Deleted")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+}
+
+/* ---------- STORY REPLIES TAB ---------- */
+function renderStories(){
+  const rows=STATE.storyReplies||[];
+  const stories=(STATE.content.stories)||DEFAULTS.stories||[];
+  const titleFor=id=>(stories.find(s=>s.id===id)||{}).title||id;
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Story replies</h2><p class="hint">Anonymous replies on Stories posts. Delete any that are unkind or unsafe.</p></div>
+    <span class="pill">${rows.length} replies</span></div>
+    ${rows.length?rows.map(r=>`
+      <div class="list-item">
+        <div class="grow">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+            <strong>${esc(r.handle)}</strong>
+            <span class="pill">${esc(titleFor(r.story_id))}</span>
+            <small style="color:var(--muted)">${new Date(r.created_at).toLocaleString()}</small>
+          </div>
+          <p style="margin:0;white-space:pre-wrap">${esc(r.body)}</p>
+        </div>
+        <button class="btn btn-danger btn-sm" data-del-story="${esc(r.id)}">Delete</button>
+      </div>`).join(""):`<div class="empty">No replies yet.</div>`}
+  `;
+  $$("[data-del-story]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("Delete this reply?"))return;
+    try{await sb(`story_replies?id=eq.${encodeURIComponent(b.dataset.delStory)}`,{method:"DELETE"});
+      STATE.storyReplies=STATE.storyReplies.filter(x=>x.id!==b.dataset.delStory);renderStories();toast("Deleted")}
+    catch(e){toast("Failed: "+(e.message||e))}
+  }));
+}
+
+/* ---------- BLOG TAB ---------- */
+function slugify(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)||"post"}
+function inlineMd(s){
+  return esc(s)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g,"$1<em>$2</em>");
+}
+function mdToHtml(text){
+  return String(text||"").split(/\n\s*\n/).map(block=>{
+    block=block.trim();if(!block)return"";
+    const lines=block.split("\n");
+    if(lines.length===1&&/^###\s+/.test(block))return `<h3>${inlineMd(block.replace(/^###\s+/,""))}</h3>`;
+    if(lines.length===1&&/^##\s+/.test(block))return `<h2>${inlineMd(block.replace(/^##\s+/,""))}</h2>`;
+    if(lines.every(l=>/^[-*]\s+/.test(l)))return `<ul>${lines.map(l=>`<li>${inlineMd(l.replace(/^[-*]\s+/,""))}</li>`).join("")}</ul>`;
+    if(lines.every(l=>/^\d+[.)]\s+/.test(l)))return `<ol>${lines.map(l=>`<li>${inlineMd(l.replace(/^\d+[.)]\s+/,""))}</li>`).join("")}</ol>`;
+    if(lines.every(l=>/^>\s?/.test(l)))return `<blockquote>${inlineMd(lines.map(l=>l.replace(/^>\s?/,"")).join(" "))}</blockquote>`;
+    return `<p>${inlineMd(lines.join("\n")).replace(/\n/g,"<br>")}</p>`;
+  }).join("");
+}
+function blogRow(p={}){
+  const draft=!!p.draft;
+  const bodyText=Array.isArray(p.body)?p.body.join("\n\n"):String(p.body||"");
+  const today=new Date().toISOString().slice(0,10);
+  const dateVal=/^\d{4}-\d{2}-\d{2}$/.test(p.date||"")?p.date:(p.date?"":today);
+  return `<details class="list-item item" data-post ${p.title?"":"open"}>
+    <summary><span class="item-title" data-title data-fallback="New post">${esc(p.title||"New post")}</span><span class="pill ${draft?"new":"ok"}" data-state-pill>${draft?"Draft":"Published"}</span><button class="del" type="button" data-del>Remove</button></summary>
+    <div class="item-body grow">
+      <div class="field"><label>Title</label><input data-f="title" value="${esc(p.title||"")}" placeholder="Post title"></div>
+      <div class="row-3">
+        <div class="field"><label>Date</label><input data-f="date" type="date" value="${esc(dateVal)}"></div>
+        <div class="field"><label>Category</label><input data-f="category" value="${esc(p.category||"")}" placeholder="e.g. Wellbeing"></div>
+        <div class="field"><label>Status</label><select data-f="status"><option value="published" ${draft?"":"selected"}>Published</option><option value="draft" ${draft?"selected":""}>Draft (hidden)</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Author</label><input data-f="author" value="${esc(p.author||"Daffodil Care")}"></div>
+        <div class="field"><label>URL slug</label><input data-f="id" value="${esc(p.id||"")}" placeholder="auto-generated from the title"></div>
+      </div>
+      <div class="field"><label>Excerpt (shown on cards)</label><textarea data-f="excerpt" style="min-height:70px" placeholder="One or two sentences">${esc(p.excerpt||"")}</textarea></div>
+      <div class="pf-cap">Cover image</div>
+      ${photoField(p.cover||"",{prefix:"blog"})}
+      <div class="pf-cap">Article</div>
+      <div class="fmt" role="toolbar" aria-label="Formatting">
+        <button type="button" data-fmt="bold"><b>B</b></button>
+        <button type="button" data-fmt="italic"><i>I</i></button>
+        <button type="button" data-fmt="h2">Heading</button>
+        <button type="button" data-fmt="h3">Subheading</button>
+        <button type="button" data-fmt="ul">• List</button>
+        <button type="button" data-fmt="ol">1. List</button>
+        <button type="button" data-fmt="quote">Quote</button>
+        <button type="button" data-fmt="link">Link</button>
+        <span class="sp"></span>
+        <button type="button" data-preview>Preview</button>
+      </div>
+      <div class="field"><textarea class="post-body" data-f="body" placeholder="Write your article. Leave a blank line between paragraphs.">${esc(bodyText)}</textarea></div>
+      <div class="preview prose" data-preview-box hidden></div>
+      ${p.id?`<p class="hint" style="margin:0;color:var(--muted);font-size:.85rem"><a class="btn btn-outline btn-sm" href="${CONFIG.publicSiteUrl}#/blog/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">View on site ↗</a></p>`:""}
+    </div>
+  </details>`;
+}
+function renderBlog(){
+  const posts=(STATE.content.blog!==undefined?STATE.content.blog:DEFAULTS.blog)||[];
+  const sorted=posts.slice().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Blog</h2><p class="hint">Write and publish articles. Drafts stay hidden from the public site. Press Save to push changes live.</p></div>
+    <div class="head-acts"><button class="btn btn-outline btn-sm" id="addPost">+ New post</button><button class="btn btn-dark btn-sm" id="saveBlog">Save blog</button></div></div>
+    <div class="empty" id="blogEmpty" ${sorted.length?"hidden":""}>No posts yet. Press “+ New post” to write your first one.</div>
+    <div id="blogList">${sorted.map(blogRow).join("")}</div>
+    <p class="status" id="st-blog"></p>`;
+  const list=$("#blogList");
+  $("#addPost").onclick=()=>{
+    const tmp=document.createElement("div");tmp.innerHTML=blogRow({draft:true});
+    const el=tmp.firstElementChild;el.open=true;list.prepend(el);
+    $("#blogEmpty").hidden=true;$('[data-f="title"]',el).focus();
+  };
+  $("#saveBlog").onclick=saveBlog;
+  list.addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]");
+    if(del){
+      e.preventDefault();e.stopPropagation();
+      if(!confirm("Remove this post? It is deleted from the site once you press Save blog."))return;
+      del.closest("[data-post]").remove();
+      $("#blogEmpty").hidden=!!$$("[data-post]",list).length;
+      return;
+    }
+    const f=e.target.closest("[data-fmt]");
+    if(f){applyFmt($(".post-body",f.closest("[data-post]")),f.dataset.fmt);return}
+    const pv=e.target.closest("[data-preview]");
+    if(pv){
+      const row=pv.closest("[data-post]"),box=$("[data-preview-box]",row),ta=$(".post-body",row);
+      const show=box.hidden;
+      box.hidden=!show;ta.closest(".field").hidden=show;
+      pv.textContent=show?"Edit":"Preview";
+      if(show)box.innerHTML=mdToHtml(ta.value)||'<p style="color:var(--muted)">Nothing to preview yet.</p>';
+    }
+  });
+  list.addEventListener("change",e=>{
+    const s=e.target.closest('[data-f="status"]');
+    if(!s)return;
+    const pill=$("[data-state-pill]",s.closest("[data-post]")),d=s.value==="draft";
+    pill.textContent=d?"Draft":"Published";pill.className="pill "+(d?"new":"ok");
+  });
+}
+function applyFmt(ta,kind){
+  const v=ta.value,s=ta.selectionStart,e=ta.selectionEnd,sel=v.slice(s,e);
+  let out,ns,ne;
+  if(kind==="bold"||kind==="italic"){
+    const m=kind==="bold"?"**":"*",t=sel||(kind==="bold"?"bold text":"italic text");
+    out=v.slice(0,s)+m+t+m+v.slice(e);ns=s+m.length;ne=ns+t.length;
+  }else if(kind==="link"){
+    let url=prompt("Link address (https://…)");if(!url)return;
+    if(!/^https?:\/\//i.test(url))url="https://"+url;
+    const t=sel||"link text",ins=`[${t}](${url})`;
+    out=v.slice(0,s)+ins+v.slice(e);ns=s+1;ne=ns+t.length;
+  }else{
+    const ls=v.lastIndexOf("\n",s-1)+1;let le=v.indexOf("\n",e);if(le<0)le=v.length;
+    const block=v.slice(ls,le)||"Text";
+    const lines=block.split("\n").map(l=>l.replace(/^(#{2,3}\s+|[-*]\s+|\d+[.)]\s+|>\s?)/,""));
+    const pre={h2:()=>"## ",h3:()=>"### ",ul:()=>"- ",ol:i=>(i+1)+". ",quote:()=>"> "}[kind];
+    const single=(kind==="h2"||kind==="h3")?[lines.join(" ")]:lines;
+    const made=single.map((l,i)=>pre(i)+l).join("\n");
+    let before=v.slice(0,ls),after=v.slice(le);
+    if(before&&!before.endsWith("\n\n"))before+=before.endsWith("\n")?"\n":"\n\n";
+    if(after&&!after.startsWith("\n\n"))after=(after.startsWith("\n")?"\n":"\n\n")+after.replace(/^\n/,"");
+    out=before+made+after;ns=before.length;ne=ns+made.length;
+  }
+  ta.value=out;ta.focus();ta.setSelectionRange(ns,ne);
+}
+async function saveBlog(){
+  const st=$("#st-blog"),set=(t,c)=>{st.textContent=t;st.className="status "+c};
+  if($("#blogList [data-busy]")){set("A photo is still uploading. Try again in a moment.","err");return}
+  const today=new Date().toISOString().slice(0,10),seen=new Set(),posts=[];
+  for(const row of $$("#blogList [data-post]")){
+    const g=f=>row.querySelector(`[data-f="${f}"]`);
+    const title=g("title").value.trim();
+    if(!title){set("Every post needs a title. Add one or remove the empty post.","err");row.open=true;g("title").focus();return}
+    let id=slugify(g("id").value.trim()||title),base=id,n=2;
+    while(seen.has(id))id=base+"-"+n++;
+    seen.add(id);g("id").value=id;
+    posts.push({
+      id,title,
+      date:g("date").value||today,
+      category:g("category").value.trim(),
+      author:g("author").value.trim(),
+      cover:photoUrl(row),
+      draft:g("status").value==="draft",
+      excerpt:g("excerpt").value.trim(),
+      body:g("body").value.replace(/\r\n/g,"\n").trim()
+    });
+  }
+  set("Saving…","");
+  try{await upsertContent("blog",posts);set("Saved. Published posts are live now.","ok");toast("Blog saved")}
+  catch(e){set("Error: "+(e.message||e),"err")}
+}
+
+/* =====================================================================
+   NEWSLETTERS TAB
+   Data lives in Supabase (newsletter_subscribers, newsletter_campaigns).
+   Anything that touches Resend goes through the /api routes on Vercel,
+   so the Resend key never appears in this file.
+   ===================================================================== */
+function nlBlank(){return {id:null,subject:"",preview_text:"",format:"editor",content:"Hi {{{contact.first_name|there}}},\n\n",status:"draft"}}
+function nlFresh(){return {view:"overview",loaded:false,subs:[],camps:[],search:"",filter:"all",limit:50,draft:nlBlank(),testTo:"",health:null,error:"",missing:false,syncNote:""}}
+function nlReset(){STATE.nl=nlFresh()}
+
+const NL_NAME_TOKEN=/\{\{\{\s*(?:contact\.first_name|FIRST_NAME)\s*(?:\|\s*([^}]*?)\s*)?\}\}\}/gi;
+const NL_UNSUB_TOKEN=/\{\{\{\s*RESEND_UNSUBSCRIBE_URL\s*\}\}\}/g;
+const nlDate=d=>d?new Date(d).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"—";
+const nlCfg=k=>STATE.content[k]!==undefined?STATE.content[k]:DEFAULTS[k];
+const nlPill=s=>({draft:'<span class="pill new">Draft</span>',sending:'<span class="pill">Sending…</span>',sent:'<span class="pill ok">Sent</span>',failed:'<span class="pill bad">Failed</span>'}[s]||`<span class="pill">${esc(s)}</span>`);
+
+/* ---------- server calls ---------- */
+async function nlApi(action,payload={}){
+  const s=session();if(!s)throw new Error("Not signed in");
+  let r;
+  try{
+    r=await fetch(CONFIG.newsletterApi.replace(/\/$/,"")+"/newsletter-admin",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+s.access_token},body:JSON.stringify({action,...payload})});
+  }catch(e){throw new Error("Couldn't reach the newsletter API. Open this admin from your deployed site so /api is available.")}
+  const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{}
+  if(r.status===404&&!d.error)throw new Error("The newsletter API wasn't found (404). Make sure the api folder is deployed with this site.");
+  if(!r.ok)throw new Error(d.error||`Request failed (${r.status})`);
+  return d;
+}
+async function nlFetchAll(path,size=1000){
+  let out=[],off=0;
+  for(;;){
+    const page=await sb(`${path}${path.includes("?")?"&":"?"}limit=${size}&offset=${off}`);
+    out=out.concat(page||[]);
+    if(!page||page.length<size)break;
+    off+=size;
+  }
+  return out;
+}
+async function loadNewsletters(){
+  const nl=STATE.nl;nl.error="";nl.missing=false;
+  try{
+    const [subs,camps]=await Promise.all([
+      nlFetchAll("newsletter_subscribers?select=id,email,first_name,last_name,status,source,subscribed_at,unsubscribed_at,resend_contact_id&order=subscribed_at.desc,id.asc"),
+      sb("newsletter_campaigns?select=id,subject,preview_text,format,content,html,status,resend_broadcast_id,recipients_count,error,created_by,created_at,sent_at&order=created_at.desc&limit=200")
+    ]);
+    nl.subs=subs;nl.camps=camps||[];
+  }catch(e){
+    const m=String(e.message||e);
+    nl.missing=/PGRST205|42P01|does not exist|schema cache/i.test(m);
+    nl.error=nl.missing?"":m;
+  }
+  nl.loaded=true;
+}
+async function nlHealth(){
+  try{STATE.nl.health=await nlApi("health")}
+  catch(e){STATE.nl.health={ok:false,error:e.message}}
+  if(STATE.tab==="newsletters")nlPaintBanner();
+}
+function nlBannerHtml(){
+  const nl=STATE.nl,out=[];
+  if(nl.missing)out.push(`<div class="nl-banner"><b>Newsletter tables not found.</b> Run <code>newsletter.sql</code> in the Supabase SQL editor, then press Refresh.</div>`);
+  else if(nl.error)out.push(`<div class="nl-banner">Couldn't load newsletters: ${esc(nl.error)}</div>`);
+  const h=nl.health;
+  if(h&&!h.ok)out.push(`<div class="nl-banner warn">${h.error?`<b>Newsletter API not reachable.</b> ${esc(h.error)}`:`<b>Setup incomplete.</b> Add these environment variables in Vercel, then redeploy: ${(h.missing||[]).map(m=>`<code>${esc(m)}</code>`).join(", ")}`}</div>`);
+  if(nl.syncNote)out.push(`<div class="nl-banner ok">${esc(nl.syncNote)}</div>`);
+  return out.join("");
+}
+function nlPaintBanner(){const b=$("#nlBanner");if(b)b.innerHTML=nlBannerHtml()}
+
+/* ---------- email HTML ---------- */
+function styleEmail(h){
+  return h
+    .replace(/<h2>/g,'<h2 style="font-family:Georgia,\'Times New Roman\',serif;font-size:22px;line-height:1.25;color:#0e3b2c;margin:28px 0 10px">')
+    .replace(/<h3>/g,'<h3 style="font-family:Georgia,\'Times New Roman\',serif;font-size:18px;line-height:1.3;color:#0e3b2c;margin:24px 0 8px">')
+    .replace(/<p>/g,'<p style="margin:0 0 16px">')
+    .replace(/<ul>/g,'<ul style="margin:0 0 16px;padding-left:22px">')
+    .replace(/<ol>/g,'<ol style="margin:0 0 16px;padding-left:22px">')
+    .replace(/<li>/g,'<li style="margin:0 0 6px">')
+    .replace(/<blockquote>/g,'<blockquote style="margin:20px 0;padding:4px 0 4px 16px;border-left:4px solid #f7c62f;font-family:Georgia,\'Times New Roman\',serif;font-size:18px;color:#0e3b2c">')
+    .replace(/<a /g,'<a style="color:#2b7a57;font-weight:bold" ');
+}
+/* The full email: branded header, your content, and a footer with Resend's unsubscribe link. */
+function buildEmailHtml(d){
+  const brand=esc(nlCfg("site.brand_name")||"Daffodil Care"),motto=esc(nlCfg("home.motto")||""),loc=esc(nlCfg("site.location")||"");
+  const body=d.format==="html"?d.content:styleEmail(mdToHtml(d.content));
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.subject)}</title></head>
+<body style="margin:0;padding:0;background:#f6f6ee">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(d.preview_text||"")}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6ee"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #d8e2d6;border-radius:16px">
+<tr><td style="background:#0e3b2c;padding:22px 32px;border-radius:16px 16px 0 0"><span style="display:inline-block;width:26px;height:26px;border-radius:13px;background:#f7c62f;color:#0e3b2c;font:bold 15px/26px Georgia,serif;text-align:center;vertical-align:middle">${esc((nlCfg("site.brand_name")||"D").trim().charAt(0).toUpperCase())}</span><span style="font:bold 19px Georgia,serif;color:#ffffff;vertical-align:middle;margin-left:10px">${brand}</span></td></tr>
+<tr><td style="padding:32px;font:16px/1.7 Helvetica,Arial,sans-serif;color:#15221c">${body}</td></tr>
+<tr><td style="padding:0 32px"><div style="border-top:1px solid #d8e2d6;font-size:0;line-height:0">&nbsp;</div></td></tr>
+<tr><td style="padding:20px 32px 28px;font:13px/1.6 Helvetica,Arial,sans-serif;color:#56655d"><strong style="color:#0e3b2c">${brand}</strong>${motto?` &middot; ${motto}`:""}<br>${loc}<br><br>You're receiving this because you signed up for updates from ${brand}. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#56655d;text-decoration:underline">Unsubscribe</a></td></tr>
+</table></td></tr></table></body></html>`;
+}
+function nlPreviewHtml(d){return buildEmailHtml(d).replace(NL_NAME_TOKEN,(m,f)=>f||"there").replace(NL_UNSUB_TOKEN,"#")}
+
+/* ---------- shell + tabs ---------- */
+async function renderNewsletters(){
+  const nl=STATE.nl;
+  if(!nl.loaded){
+    $("#app").innerHTML=`<div class="loading"><div class="spinner"></div><p>Loading newsletters…</p></div>`;
+    await loadNewsletters();
+    if(!nl.health)nlHealth();
+    if(STATE.tab!=="newsletters")return;
+  }
+  const views=[["overview","Overview"],["subscribers","Subscribers"],["compose","Compose"],["history","History"]];
+  $("#app").innerHTML=`
+    <div class="section-head"><div><h2 style="margin:0">Newsletters</h2><p class="hint">Write, test and send updates to people who signed up. Unsubscribes are handled automatically.</p></div>
+    <div class="head-acts"><button class="btn btn-outline btn-sm" id="nlRefresh">Refresh</button><button class="btn btn-outline btn-sm" id="nlSync">Sync with Resend</button></div></div>
+    <div id="nlBanner">${nlBannerHtml()}</div>
+    <div class="tabs" role="tablist">${views.map(([k,l])=>`<button type="button" role="tab" data-nlview="${k}" class="${nl.view===k?"on":""}">${l}${k==="subscribers"?` <span class="pill">${nl.subs.length}</span>`:""}</button>`).join("")}</div>
+    <div id="nlBody"></div>`;
+  $$("[data-nlview]").forEach(b=>b.onclick=()=>{nlSyncDraft();nl.view=b.dataset.nlview;renderNewsletters()});
+  $("#nlRefresh").onclick=()=>{nlSyncDraft();nl.loaded=false;nl.health=null;nl.syncNote="";renderNewsletters()};
+  $("#nlSync").onclick=nlSync;
+  ({overview:nlOverview,subscribers:nlSubscribers,compose:nlCompose,history:nlHistory})[nl.view]();
+}
+async function nlSync(){
+  const b=$("#nlSync");b.disabled=true;b.textContent="Syncing…";
+  try{
+    const r=await nlApi("sync");
+    STATE.nl.syncNote=`Sync finished. ${r.in_resend} contact${r.in_resend===1?"":"s"} in Resend. Imported ${r.imported}, marked ${r.unsubscribed_local} as unsubscribed here, sent ${r.pushed} to Resend.`+(r.remaining?` ${r.remaining} more still to send. Press Sync again.`:"");
+    nlSyncDraft();STATE.nl.loaded=false;renderNewsletters();
+  }catch(e){toast("Sync failed: "+(e.message||e));b.disabled=false;b.textContent="Sync with Resend"}
+}
+
+/* ---------- overview ---------- */
+function nlOverview(){
+  const nl=STATE.nl,active=nl.subs.filter(s=>s.status==="active").length,sent=nl.camps.filter(c=>c.status==="sent").length;
+  $("#nlBody").innerHTML=`
+    <div class="nl-stats">${[["Total subscribers",nl.subs.length],["Active",active],["Unsubscribed",nl.subs.length-active],["Newsletters sent",sent]].map(([l,n])=>`<div class="nl-stat"><b>${n.toLocaleString()}</b><span>${l}</span></div>`).join("")}</div>
+    <div class="section-head"><h3>Recent newsletters</h3><button class="btn btn-dark btn-sm" data-go="compose" data-new>+ New newsletter</button></div>
+    ${nl.camps.length?nl.camps.slice(0,5).map(c=>`<div class="list-item"><div class="grow"><strong>${esc(c.subject||"(no subject)")}</strong><div class="nl-meta" style="margin:2px 0 0">${nlDate(c.sent_at||c.created_at)}${c.status==="sent"&&c.recipients_count!=null?` &middot; ${c.recipients_count.toLocaleString()} recipients`:""}</div></div>${nlPill(c.status)}</div>`).join(""):`<div class="empty">No newsletters yet. Write your first one in Compose.</div>`}`;
+  $$("[data-go]").forEach(b=>b.onclick=()=>{if(b.hasAttribute("data-new")&&STATE.nl.draft.id)STATE.nl.draft=nlBlank();STATE.nl.view=b.dataset.go;renderNewsletters()});
+}
+
+/* ---------- subscribers ---------- */
+function nlFilteredSubs(){
+  const nl=STATE.nl,q=nl.search.trim().toLowerCase();
+  return nl.subs.filter(s=>(nl.filter==="all"||s.status===nl.filter)&&(!q||s.email.includes(q)||`${s.first_name||""} ${s.last_name||""}`.toLowerCase().includes(q)));
+}
+function nlSubRow(s){
+  const on=s.status==="active",name=[s.first_name,s.last_name].filter(Boolean).join(" ");
+  return `<div class="nl-sub"><div class="nl-who"><strong>${esc(s.email)}</strong><small>${esc(name||"No name")}</small></div>
+    <span class="pill ${on?"ok":"bad"}">${on?"Active":"Unsubscribed"}</span>
+    ${on&&!s.resend_contact_id?'<span class="pill new" title="Not in Resend yet. Press Sync with Resend.">Not synced</span>':""}
+    <small class="nl-date" title="Date subscribed">${nlDate(s.subscribed_at)}</small>
+    <button class="btn btn-outline btn-sm" data-nl-toggle="${esc(s.id)}">${on?"Unsubscribe":"Reactivate"}</button></div>`;
+}
+function nlPaintSubs(){
+  const nl=STATE.nl,list=nlFilteredSubs(),shown=list.slice(0,nl.limit);
+  $("#nlSubList").innerHTML=list.length
+    ?`<p class="nl-meta">Showing ${shown.length} of ${list.length}</p><div class="nl-list">${shown.map(nlSubRow).join("")}</div>${list.length>shown.length?`<p style="text-align:center;margin-top:14px"><button class="btn btn-outline btn-sm" id="nlMore">Show ${Math.min(50,list.length-shown.length)} more</button></p>`:""}`
+    :`<div class="empty">${nl.subs.length?"No subscribers match.":"No subscribers yet. Signups from the public site will appear here."}</div>`;
+  const more=$("#nlMore");if(more)more.onclick=()=>{nl.limit+=50;nlPaintSubs()};
+}
+function nlSubscribers(){
+  const nl=STATE.nl;
+  $("#nlBody").innerHTML=`
+    <details class="acc-plain" data-acc="nl-add" ${STATE.open["nl-add"]?"open":""}><summary><h3>Add a subscriber</h3></summary>
+      <div class="row" style="margin-top:14px"><div class="field"><label for="nlAddEmail">Email</label><input id="nlAddEmail" type="email" autocomplete="off"></div><div class="field"><label for="nlAddName">Name (optional)</label><input id="nlAddName" autocomplete="off"></div></div>
+      <button class="btn btn-dark btn-sm" id="nlAdd">Add subscriber</button><p class="status" id="nlAddSt"></p>
+    </details>
+    <div class="field" style="margin-top:18px"><label for="nlSearch" class="vh">Search subscribers</label><input id="nlSearch" type="search" placeholder="Search by email or name" value="${esc(nl.search)}"></div>
+    <div class="chip-row">${[["all","All"],["active","Active"],["unsubscribed","Unsubscribed"]].map(([k,l])=>`<button type="button" class="chip ${nl.filter===k?"on":""}" data-nlfilter="${k}">${l}</button>`).join("")}</div>
+    <div id="nlSubList"></div>`;
+  nlPaintSubs();
+  $("#nlSearch").oninput=e=>{nl.search=e.target.value;nl.limit=50;nlPaintSubs()};
+  $$("[data-nlfilter]").forEach(b=>b.onclick=()=>{nl.filter=b.dataset.nlfilter;nl.limit=50;nlSubscribers()});
+  $("#nlAdd").onclick=async()=>{
+    const st=$("#nlAddSt"),btn=$("#nlAdd"),email=$("#nlAddEmail").value.trim();
+    st.className="status";st.textContent="";
+    if(!email){st.textContent="Enter an email address.";st.className="status err";return}
+    btn.disabled=true;st.textContent="Adding…";
+    try{await nlApi("add-subscriber",{email,name:$("#nlAddName").value.trim()});toast("Subscriber added");nl.loaded=false;STATE.open["nl-add"]=true;renderNewsletters()}
+    catch(e){st.textContent=e.message||String(e);st.className="status err";btn.disabled=false}
+  };
+  $("#nlSubList").onclick=async e=>{
+    const b=e.target.closest("[data-nl-toggle]");if(!b)return;
+    const s=nl.subs.find(x=>x.id===b.dataset.nlToggle);if(!s)return;
+    const to=s.status==="active"?"unsubscribed":"active";
+    if(!confirm(to==="unsubscribed"?`Unsubscribe ${s.email}? They will stop receiving newsletters.`:`Reactivate ${s.email}? Only do this if they asked to rejoin.`))return;
+    b.disabled=true;
+    try{
+      await nlApi("set-status",{id:s.id,status:to});
+      s.status=to;s.unsubscribed_at=to==="unsubscribed"?new Date().toISOString():null;
+      nlSubscribers();
+      toast(to==="unsubscribed"?"Unsubscribed":"Reactivated");
+    }catch(err){toast("Failed: "+(err.message||err));b.disabled=false}
+  };
+}
+
+/* ---------- compose ---------- */
+function nlSyncDraft(){
+  const d=STATE.nl.draft,g=id=>document.getElementById(id);
+  if(!g("nlSubject"))return d;
+  d.subject=g("nlSubject").value.trim();
+  d.preview_text=g("nlPreheader").value.trim();
+  d.format=g("nlFormat").value;
+  d.content=g("nlContent").value.replace(/\r\n/g,"\n");
+  const t=g("nlTestTo");if(t)STATE.nl.testTo=t.value.trim();
+  return d;
+}
+function nlCompose(){
+  const nl=STATE.nl,d=nl.draft,isHtml=d.format==="html";
+  const active=nl.subs.filter(s=>s.status==="active").length;
+  $("#nlBody").innerHTML=`
+    <div class="card">
+      <h2>${d.id?"Edit draft":"New newsletter"}</h2>
+      <p class="sub">Goes to every active subscriber (${active.toLocaleString()} right now). The branded header and an unsubscribe link are added for you.</p>
+      <div class="field"><label for="nlSubject">Subject</label><input id="nlSubject" maxlength="150" value="${esc(d.subject)}"></div>
+      <div class="field"><label for="nlPreheader">Preview text</label><input id="nlPreheader" maxlength="200" value="${esc(d.preview_text)}" placeholder="The short line shown next to the subject in the inbox"></div>
+      <div class="field" style="max-width:280px"><label for="nlFormat">Format</label><select id="nlFormat"><option value="editor" ${isHtml?"":"selected"}>Simple editor</option><option value="html" ${isHtml?"selected":""}>HTML</option></select></div>
+      <div class="pf-cap">${isHtml?"Email body (HTML)":"Message"}</div>
+      <div class="fmt" role="toolbar" aria-label="Formatting">
+        ${isHtml?"":`<button type="button" data-fmt="bold"><b>B</b></button><button type="button" data-fmt="italic"><i>I</i></button><button type="button" data-fmt="h2">Heading</button><button type="button" data-fmt="h3">Subheading</button><button type="button" data-fmt="ul">• List</button><button type="button" data-fmt="ol">1. List</button><button type="button" data-fmt="quote">Quote</button><button type="button" data-fmt="link">Link</button>`}
+        <button type="button" id="nlNameTok" title="Inserts the subscriber's first name, or “there” if we don't have one">First name</button>
+        <span class="sp"></span>
+        <button type="button" id="nlPreviewBtn">Preview</button>
+      </div>
+      <div class="field"><textarea id="nlContent" class="post-body" style="min-height:320px" placeholder="${isHtml?"Write the email body as HTML. Images need full https:// addresses.":"Write your newsletter. Leave a blank line between paragraphs."}">${esc(d.content)}</textarea></div>
+      <div class="preview" id="nlPreviewBox" hidden><iframe id="nlFrame" class="nl-frame" sandbox title="Email preview"></iframe></div>
+      <div class="head-acts" style="margin:4px 0 18px"><button class="btn btn-outline btn-sm" id="nlSave">Save draft</button><button class="btn btn-outline btn-sm" id="nlBlank">Start a new one</button></div>
+      <div class="nl-send">
+        <div class="field"><label for="nlTestTo">Send a test to</label><input id="nlTestTo" type="email" value="${esc(nl.testTo||(session()||{}).email||"")}"></div>
+        <button class="btn btn-outline" id="nlTest">Send test</button>
+        <button class="btn btn-primary" id="nlSend">Send to ${active.toLocaleString()} subscriber${active===1?"":"s"}</button>
+      </div>
+      <p class="status" id="nlSt" role="status" aria-live="polite"></p>
+    </div>`;
+  $$("#nlBody [data-fmt]").forEach(b=>b.onclick=()=>applyFmt($("#nlContent"),b.dataset.fmt));
+  $("#nlNameTok").onclick=()=>{const ta=$("#nlContent");ta.setRangeText("{{{contact.first_name|there}}}",ta.selectionStart,ta.selectionEnd,"end");ta.focus()};
+  $("#nlFormat").onchange=()=>{
+    const prev=d.format;nlSyncDraft();const next=d.format;
+    if(prev==="editor"&&next==="html")d.content=styleEmail(mdToHtml(d.content));
+    else if(prev==="html"&&next==="editor"&&!confirm("Switching back to the simple editor will show your HTML as plain text. Continue?"))d.format="html";
+    nlCompose();
+  };
+  $("#nlPreviewBtn").onclick=e=>{
+    const box=$("#nlPreviewBox"),field=$("#nlContent").closest(".field"),show=box.hidden;
+    box.hidden=!show;field.hidden=show;e.target.textContent=show?"Edit":"Preview";
+    if(show)$("#nlFrame").srcdoc=nlPreviewHtml(nlSyncDraft());
+  };
+  $("#nlBlank").onclick=()=>{if(!confirm("Start a blank newsletter? Anything you haven't saved will be lost."))return;nl.draft=nlBlank();nlCompose()};
+  $("#nlSave").onclick=e=>nlRun(e.currentTarget,"Saving…",async st=>{await nlSaveDraft();st.textContent="Draft saved.";st.className="status ok";toast("Draft saved")});
+  $("#nlTest").onclick=e=>nlRun(e.currentTarget,"Sending test…",async st=>{
+    const to=$("#nlTestTo").value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to))throw new Error("Enter a valid test address.");
+    const c=await nlSaveDraft();await nlApi("send-test",{campaignId:c.id,to});
+    st.textContent=`Test sent to ${to}. Check your inbox and spam folder.`;st.className="status ok";
+  });
+  $("#nlSend").onclick=e=>nlRun(e.currentTarget,"Sending…",async st=>{
+    const cur=nlSyncDraft(),count=nl.subs.filter(s=>s.status==="active").length;
+    if(!cur.subject)throw new Error("Add a subject first.");
+    if(!cur.content.trim())throw new Error("Write some content first.");
+    if(!count)throw new Error("There are no active subscribers yet.");
+    if(!confirm(`Send “${cur.subject}” to ${count.toLocaleString()} active subscriber${count===1?"":"s"}?\n\nThis can't be undone. Have you sent yourself a test first?`))return;
+    const c=await nlSaveDraft();
+    await nlApi("send-broadcast",{campaignId:c.id});
+    toast("Newsletter sent to Resend for delivery");
+    nl.draft=nlBlank();nl.loaded=false;nl.view="history";renderNewsletters();
+  });
+}
+async function nlRun(btn,label,fn){
+  const st=$("#nlSt"),orig=btn.textContent;
+  btn.disabled=true;btn.textContent=label;st.textContent="";st.className="status";
+  try{await fn(st)}catch(e){st.textContent=e.message||String(e);st.className="status err"}
+  btn.disabled=false;btn.textContent=orig;
+}
+async function nlSaveDraft(){
+  const nl=STATE.nl,d=nlSyncDraft();
+  if(!d.subject)throw new Error("Add a subject first.");
+  if(!d.content.trim())throw new Error("Write some content first.");
+  const row={subject:d.subject,preview_text:d.preview_text,format:d.format,content:d.content,html:buildEmailHtml(d),updated_at:new Date().toISOString()};
+  let saved;
+  if(d.id){
+    const r=await sb(`newsletter_campaigns?id=eq.${encodeURIComponent(d.id)}`,{method:"PATCH",headers:{Prefer:"return=representation"},body:row});
+    if(!r||!r.length)throw new Error("This newsletter can't be edited any more because it has been sent.");
+    saved=r[0];
+  }else{
+    const r=await sb("newsletter_campaigns",{method:"POST",headers:{Prefer:"return=representation"},body:{...row,created_by:(session()||{}).email||null}});
+    saved=r[0];d.id=saved.id;
+  }
+  const i=nl.camps.findIndex(c=>c.id===saved.id);
+  if(i>=0)nl.camps[i]=saved;else nl.camps.unshift(saved);
+  return saved;
+}
+
+/* ---------- history ---------- */
+function nlCampItem(c){
+  const editable=c.status==="draft"||c.status==="failed";
+  return `<details class="list-item item" data-camp="${esc(c.id)}"><summary><span class="item-title">${esc(c.subject||"(no subject)")}</span>${nlPill(c.status)}<small class="nl-date">${nlDate(c.sent_at||c.created_at)}</small></summary>
+    <div class="item-body grow">
+      <p class="nl-meta">${c.preview_text?`<b>Preview text:</b> ${esc(c.preview_text)}<br>`:""}<b>Recipients:</b> ${c.recipients_count!=null?c.recipients_count.toLocaleString():"—"}<br><b>Resend broadcast ID:</b> ${c.resend_broadcast_id?`<code>${esc(c.resend_broadcast_id)}</code>`:"—"}<br><b>Created by:</b> ${esc(c.created_by||"—")}</p>
+      ${c.error?`<p class="status err" style="margin:0 0 12px">${esc(c.error)}</p>`:""}
+      <div class="head-acts">
+        <button class="btn btn-outline btn-sm" data-nl-prev="${esc(c.id)}">Preview</button>
+        ${editable?`<button class="btn btn-dark btn-sm" data-nl-edit="${esc(c.id)}">${c.status==="failed"?"Edit and retry":"Edit"}</button>`:""}
+        <button class="btn btn-outline btn-sm" data-nl-dup="${esc(c.id)}">Duplicate</button>
+        ${editable?`<button class="btn btn-danger btn-sm" data-nl-del="${esc(c.id)}">Delete</button>`:""}
+      </div>
+      <div class="preview" data-nl-prevbox hidden style="margin:12px 0 0"></div>
+    </div></details>`;
+}
+function nlHistory(){
+  const nl=STATE.nl;
+  $("#nlBody").innerHTML=nl.camps.length?nl.camps.map(nlCampItem).join(""):`<div class="empty">No newsletters yet. Write your first one in Compose.</div>`;
+  const find=id=>nl.camps.find(c=>c.id===id);
+  const open=(c,dup)=>{nl.draft={id:dup?null:c.id,subject:dup?`${c.subject} (copy)`:c.subject,preview_text:c.preview_text||"",format:c.format||"editor",content:c.content||"",status:"draft"};nl.view="compose";renderNewsletters()};
+  $("#nlBody").onclick=async e=>{
+    const p=e.target.closest("[data-nl-prev]"),ed=e.target.closest("[data-nl-edit]"),du=e.target.closest("[data-nl-dup]"),de=e.target.closest("[data-nl-del]");
+    if(p){
+      const c=find(p.dataset.nlPrev),box=$("[data-nl-prevbox]",p.closest("[data-camp]"));
+      box.hidden=!box.hidden;
+      if(!box.hidden&&!box.firstChild){const f=document.createElement("iframe");f.className="nl-frame";f.setAttribute("sandbox","");f.title="Email preview";f.srcdoc=(c.html||"").replace(NL_NAME_TOKEN,(m,x)=>x||"there").replace(NL_UNSUB_TOKEN,"#");box.appendChild(f)}
+    }else if(ed)open(find(ed.dataset.nlEdit),false);
+    else if(du)open(find(du.dataset.nlDup),true);
+    else if(de){
+      const c=find(de.dataset.nlDel);
+      if(!confirm(`Delete “${c.subject||"this draft"}”?`))return;
+      try{
+        const r=await sb(`newsletter_campaigns?id=eq.${encodeURIComponent(c.id)}`,{method:"DELETE",headers:{Prefer:"return=representation"}});
+        if(!r||!r.length)throw new Error("Only drafts and failed sends can be deleted.");
+        nl.camps=nl.camps.filter(x=>x.id!==c.id);if(nl.draft.id===c.id)nl.draft=nlBlank();
+        nlHistory();toast("Deleted");
+      }catch(err){toast("Couldn't delete: "+(err.message||err))}
+    }
+  };
+}
+
+/* ---------- global listeners: photo fields, expand/collapse, live titles ---------- */
+document.addEventListener("change",async e=>{
+  const inp=e.target.closest("[data-pf-upload]");
+  if(!inp||!inp.files.length)return;
+  const box=inp.closest("[data-photo]"),file=inp.files[0];
+  inp.value="";
+  const st=$(".pf-status",box);
+  box.dataset.busy="1";st.textContent="Uploading…";
+  try{
+    let url,msg;
+    if(box.dataset.slot){url=await uploadImage(slotKeyFor(box),file);msg="Uploaded and live."}
+    else{url=await uploadFile(box.dataset.prefix||"misc",file);msg="Uploaded. Press Save to publish."}
+    setPhoto(box,url);$(".pf-status",box).textContent=msg;
+  }catch(err){st.textContent="";toast("Upload failed: "+(err.message||err))}
+  delete box.dataset.busy;
+});
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-pf-clear]");
+  if(b){
+    const box=b.closest("[data-photo]");
+    if(box.dataset.slot){
+      if(!confirm("Remove this photo from the site now?"))return;
+      try{await removeImage(slotKeyFor(box));setPhoto(box,"");toast("Removed")}
+      catch(err){toast("Couldn't remove: "+(err.message||err))}
+    }else setPhoto(box,"");
+    return;
+  }
+  const x=e.target.closest("[data-expand]");
+  if(x){
+    const open=x.dataset.expand==="all";
+    $$("details[data-acc]").forEach(d=>{d.open=open;STATE.open[d.dataset.acc]=open});
+  }
+});
+document.addEventListener("toggle",e=>{
+  const d=e.target;
+  if(d&&d.dataset&&d.dataset.acc)STATE.open[d.dataset.acc]=d.open;
+},true);
+document.addEventListener("input",e=>{
+  const inp=e.target.closest('.item [data-f="title"], .item [data-f="name"]');
+  if(!inp)return;
+  const t=inp.closest(".item").querySelector("[data-title]");
+  if(t)t.textContent=inp.value.trim()||t.dataset.fallback;
+});
+
+/* ---------- BOOT ---------- */
+async function boot(){
+  if(!SB.url||!SB.anonKey){renderLogin();return}
+  const s=session();
+  if(!s||!s.access_token){stopInactivityWatch();renderLogin();return}
+  renderShell();
+  startInactivityWatch();
+  $("#app").innerHTML=`<div class="loading"><div class="spinner"></div><p>Loading…</p></div>`;
+  await loadAll();
+  renderShell();
+  renderTab();
+}
+boot();
+</script>
+</body>
+</html>
